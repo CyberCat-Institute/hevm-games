@@ -3,3 +3,30 @@
 This project integrates open games with HEVM, an execution environement for EVM bytecode.
 
 This allows the game-theoretic analysis of smart contracts
+
+## How to install
+
+For linux, it should be enough to run
+
+    $ stack build
+
+
+For mac OS, you need to edit the line
+
+```
+arch: x86_64
+```
+
+in `stack.yaml`, and replace it by
+
+```
+arch: aarch64
+```
+
+You also need to install solidity via `brew` with
+
+    $ brew install solidity
+
+after that you can build the project with
+
+    $ stack build
