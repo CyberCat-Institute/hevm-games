@@ -11,7 +11,13 @@ For linux, it should be enough to run
     $ stack build
 
 
-For mac OS, you need to edit the line
+If you require a specific version of solidity, you can use nix and
+this overlay: https://github.com/hellwolf/solc.nix
+
+### Mac OS Specific instructions
+
+If you use Mac OS on Apple silicon, you will want to change
+the line
 
 ```
 arch: x86_64
