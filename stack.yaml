@@ -32,9 +32,19 @@ packages:
 - .
 
 # Dependency packages to be pulled from upstream that are not in the resolver.
-# These entries can reference officially published versions as well as
-# forks / in-progress versions pinned to a git hash. For example:
+# These entries can reference officially published versions as well as # forks / in-progress versions pinned to a git hash. For example:
 extra-deps:
+  - HSH-2.1.3@sha256:71ded11b224f5066373ce985ec63b10c87129850b33916736dd64fa2bea9ea0a,1705
+  - brick-2.4@sha256:e9abb07ba552358d02e8d9d8e59f1086372b0a595ca8a8fb3dd54cac15cb0b3f,17632
+  - poly-0.5.1.0@sha256:8c574f017913982fd70567545bec423823ff5bdf236c19d1443f3af47e0218ba,3418
+  - restless-git-0.7@sha256:346a5775a586f07ecb291036a8d3016c3484ccdc188b574bcdec0a82c12db293,968
+  - smt2-parser-0.1.0.1@sha256:1e1a4565915ed851c13d1e6b8bb5185cf5d454da3b43170825d53e221f753d77,1421
+  - spawn-0.3@sha256:b91e01d8f2b076841410ae284b32046f91471943dc799c1af77d666c72101f02,1162
+  - spool-0.1@sha256:77780cbfc2c0be23ff2ea9e474062f3df97fcd9db946ee0b3508280a923b83e2,1461
+  - vector-sized-1.5.0@sha256:1c85b70dbfe6fbdcc58d2706c626e6e38d1900276bbb6f1ba6cfee83941f45e6,1836
+  - monad-bayes-1.3.0.3@sha256:c99b035f2c76ef56cb7471126d7e6ef70bd06135ad6882def759289942130850,6635
+  - git: https://github.com/ethereum/hevm
+    commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
   - git: https://github.com/CyberCat-Institute/open-game-engine/
     commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
 

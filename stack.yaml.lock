@@ -12,12 +12,19 @@ packages:
   original:
     hackage: HSH-2.1.3@sha256:71ded11b224f5066373ce985ec63b10c87129850b33916736dd64fa2bea9ea0a,1705
 - completed:
-    hackage: monad-bayes-1.3.0.4@sha256:101a60697c2bf0fae60157284bb8127e6a84e37c82c562cd7a262b50a34f3b5d,6650
+    hackage: brick-2.4@sha256:e9abb07ba552358d02e8d9d8e59f1086372b0a595ca8a8fb3dd54cac15cb0b3f,17632
     pantry-tree:
-      sha256: 2d9102c645cd43c5144f3a02873e841d0be2f70748dca7091a578ae909ed22af
-      size: 4852
+      sha256: 74c61655054adb724ac5fc20816ac2c55ba90da2a7560c1da876b6941c927984
+      size: 4745
   original:
-    hackage: monad-bayes-1.3.0.4@sha256:101a60697c2bf0fae60157284bb8127e6a84e37c82c562cd7a262b50a34f3b5d,6650
+    hackage: brick-2.4@sha256:e9abb07ba552358d02e8d9d8e59f1086372b0a595ca8a8fb3dd54cac15cb0b3f,17632
+- completed:
+    hackage: poly-0.5.1.0@sha256:8c574f017913982fd70567545bec423823ff5bdf236c19d1443f3af47e0218ba,3418
+    pantry-tree:
+      sha256: e59a1e3809fee49968cf9505edf849109d733e4e795b49e2d5fdef1a4993c31d
+      size: 2531
+  original:
+    hackage: poly-0.5.1.0@sha256:8c574f017913982fd70567545bec423823ff5bdf236c19d1443f3af47e0218ba,3418
 - completed:
     hackage: restless-git-0.7@sha256:346a5775a586f07ecb291036a8d3016c3484ccdc188b574bcdec0a82c12db293,968
     pantry-tree:
@@ -47,6 +54,31 @@ packages:
   original:
     hackage: spool-0.1@sha256:77780cbfc2c0be23ff2ea9e474062f3df97fcd9db946ee0b3508280a923b83e2,1461
 - completed:
+    hackage: vector-sized-1.5.0@sha256:1c85b70dbfe6fbdcc58d2706c626e6e38d1900276bbb6f1ba6cfee83941f45e6,1836
+    pantry-tree:
+      sha256: 026c260a2c1c6b2deab166dcbeb8888eb284d7e9e73ab837d88d530933929588
+      size: 1302
+  original:
+    hackage: vector-sized-1.5.0@sha256:1c85b70dbfe6fbdcc58d2706c626e6e38d1900276bbb6f1ba6cfee83941f45e6,1836
+- completed:
+    hackage: monad-bayes-1.3.0.3@sha256:c99b035f2c76ef56cb7471126d7e6ef70bd06135ad6882def759289942130850,6635
+    pantry-tree:
+      sha256: b096ffbc426039793134d917a107079a8179c7576969ee06c50fe33a42fcbcdf
+      size: 4852
+  original:
+    hackage: monad-bayes-1.3.0.3@sha256:c99b035f2c76ef56cb7471126d7e6ef70bd06135ad6882def759289942130850,6635
+- completed:
+    commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
+    git: https://github.com/ethereum/hevm
+    name: hevm
+    pantry-tree:
+      sha256: c855c40c933fec1b2f9f1eac366a658be3ad0afda03e930dfdc2d6cb4e1d3788
+      size: 7720
+    version: 0.53.0
+  original:
+    commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
+    git: https://github.com/ethereum/hevm
+- completed:
     commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
     git: https://github.com/CyberCat-Institute/open-game-engine/
     name: open-games-hs
@@ -57,17 +89,6 @@ packages:
   original:
     commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
     git: https://github.com/CyberCat-Institute/open-game-engine/
-- completed:
-    commit: c5e40507c35e6f2119aeb5f0740dc3564100ebdc
-    git: https://github.com/ethereum/hevm
-    name: hevm
-    pantry-tree:
-      sha256: 92c4d9ca0864a6d334f4940b558b61daa7dc67ddfc145a6599a035abc31e8153
-      size: 5802
-    version: 0.51.3
-  original:
-    commit: c5e40507c35e6f2119aeb5f0740dc3564100ebdc
-    git: https://github.com/ethereum/hevm
 snapshots:
 - completed:
     sha256: e176944bc843f740e05242fa7a66ca1f440c127e425254f7f1257f9b19add23f

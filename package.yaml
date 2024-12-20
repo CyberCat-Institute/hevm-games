@@ -20,7 +20,7 @@ library:
     - Examples.Prisoner
 
 dependencies:
-    - base >=4.7 && <5
+    - base >=4.9 && <5
     - bytestring
     - containers
     - open-games-hs
@@ -31,7 +31,7 @@ dependencies:
     - optics-core
     - template-haskell
     - transformers
-    - vector
+    - vector >= 0.53.0
     - rosezipper
     - hevm
     - mtl
