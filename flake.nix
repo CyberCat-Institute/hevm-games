@@ -20,26 +20,22 @@
           inherit system;
           overlays = [
             solc.overlay
-             (final: prev: {
-              haskell = prev.haskell // {
-                packages = prev.haskell.packages // {
-                  ghc963 = prev.haskell.packages.ghc963.override {
-                    overrides = self: super: {
-                      hevm = self.callCabal2nix "hevm" (pkgs.fetchFromGitHub {
-                        owner = "ethereum";
-                        repo = "hevm";
-                        rev = "0.51.3"; # You can update this to the version you need
-                        sha256 = "sha256-T0YLVtCVtbOSNX4rjGK42EEvLsUOPCDzh0UbDn9nQP4="; # Update this hash
-                      }) {};
-                    };
-                  };
-                };
-              };
-            })
           ];
         };
-
         hPkgs = pkgs.haskell.packages."ghc963";
+
+        # Create OpenZeppelin npm package
+        openzeppelin-contracts = pkgs.mkYarnPackage {
+          name = "openzeppelin-contracts";
+          src = pkgs.fetchFromGitHub {
+            owner = "OpenZeppelin";
+            repo = "openzeppelin-contracts";
+            rev = "v5.0.1"; # Replace with desired version
+            sha256 = "sha256-YHf6MCdHx2yODw4TLz9dJxrwjpRDPWDjkxD1mpirQEs="; # Update this hash using nix-prefetch-github
+          };
+          packageJSON = ./package.json;
+          yarnLock = ./yarn.lock;
+        };
 
         devTools = [
           hPkgs.ghc
@@ -50,6 +46,10 @@
           pkgs.secp256k1
           stack-wrapped
           (solc.mkDefault pkgs pkgs.solc_0_8_26)
+          hevm.packages.${system}.default
+          pkgs.nodejs_20
+          pkgs.yarn
+          openzeppelin-contracts
         ];
         stack-wrapped = pkgs.symlinkJoin {
           name = "stack";
@@ -73,8 +73,15 @@
           shellHook = ''
             ln -sf ${pkgs.llvmPackages.clang}/bin/clang $PWD/gcc
             export PATH=$PWD:$PATH
+
+            # Create node_modules if it doesn't exist
+            if [ ! -d "node_modules" ]; then
+              mkdir -p node_modules
+            fi
+
+            # Link OpenZeppelin contracts
+            ln -sfn ${openzeppelin-contracts}/libexec/openzeppelin-contracts/node_modules/@openzeppelin node_modules/@openzeppelin
           '';
         };
       });
 }
-
