@@ -1,0 +1,6 @@
+{
+  "name": "hevm-games",
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.1"
+  }
+}
