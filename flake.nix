@@ -66,6 +66,11 @@
             export NPM_CONFIG_PREFIX="$PWD/.npm-global"
             export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
             mkdir -p $NPM_CONFIG_PREFIX
+
+            # Create symlink for OpenZeppelin at root if node_modules exists
+            if [ -d "node_modules/@openzeppelin" ]; then
+              ln -sfn $PWD/node_modules/@openzeppelin @openzeppelin
+            fi
           '';
         };
       });
