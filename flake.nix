@@ -23,20 +23,13 @@
           ];
         };
         hPkgs = pkgs.haskell.packages."ghc963";
-
-        # Create OpenZeppelin npm package
-        openzeppelin-contracts = pkgs.mkYarnPackage {
-          name = "openzeppelin-contracts";
-          src = pkgs.fetchFromGitHub {
-            owner = "OpenZeppelin";
-            repo = "openzeppelin-contracts";
-            rev = "v5.0.1"; # Replace with desired version
-            sha256 = "sha256-YHf6MCdHx2yODw4TLz9dJxrwjpRDPWDjkxD1mpirQEs="; # Update this hash using nix-prefetch-github
-          };
-          packageJSON = ./package.json;
-          yarnLock = ./yarn.lock;
+        nodeEnv = pkgs.buildEnv {
+          name = "node-env";
+          paths = [
+            pkgs.nodejs
+            pkgs.nodePackages.npm
+          ];
         };
-
         devTools = [
           hPkgs.ghc
           pkgs.zlib
@@ -47,9 +40,8 @@
           stack-wrapped
           (solc.mkDefault pkgs pkgs.solc_0_8_26)
           hevm.packages.${system}.default
-          pkgs.nodejs_20
-          pkgs.yarn
-          openzeppelin-contracts
+          pkgs.foundry-bin
+          nodeEnv
         ];
         stack-wrapped = pkgs.symlinkJoin {
           name = "stack";
@@ -67,20 +59,13 @@
       in {
         devShells.default = pkgs.mkShell {
           buildInputs = devTools;
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath devTools;
-          CC = "${pkgs.llvmPackages.clang}/bin/clang";
-          GCC = "${pkgs.llvmPackages.clang}/bin/clang";
           shellHook = ''
             ln -sf ${pkgs.llvmPackages.clang}/bin/clang $PWD/gcc
             export PATH=$PWD:$PATH
-
-            # Create node_modules if it doesn't exist
-            if [ ! -d "node_modules" ]; then
-              mkdir -p node_modules
-            fi
-
-            # Link OpenZeppelin contracts
-            ln -sfn ${openzeppelin-contracts}/libexec/openzeppelin-contracts/node_modules/@openzeppelin node_modules/@openzeppelin
+            export NODE_PATH="$PWD/node_modules"
+            export NPM_CONFIG_PREFIX="$PWD/.npm-global"
+            export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+            mkdir -p $NPM_CONFIG_PREFIX
           '';
         };
       });
