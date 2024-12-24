@@ -7,13 +7,9 @@
       url = "github:hellwolf/solc.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    hevm = {
-      url = "github:ethereum/hevm";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, solc, hevm }:
+  outputs = { self, nixpkgs, flake-utils, solc }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -39,8 +35,6 @@
           pkgs.secp256k1
           stack-wrapped
           (solc.mkDefault pkgs pkgs.solc_0_8_26)
-          hevm.packages.${system}.default
-          pkgs.foundry-bin
           nodeEnv
         ];
         stack-wrapped = pkgs.symlinkJoin {
@@ -69,7 +63,7 @@
 
             # Create symlink for OpenZeppelin at root if node_modules exists
             if [ -d "node_modules/@openzeppelin" ]; then
-              ln -sfn $PWD/node_modules/@openzeppelin @openzeppelin
+              mv $PWD/node_modules/@openzeppelin/ $PWD/@openzeppelin/
             fi
           '';
         };
