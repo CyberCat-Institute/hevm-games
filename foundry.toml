@@ -1,0 +1,2 @@
+[profile.default]
+remappings = ['@openzeppelin/=node_modules/@openzeppelin/']
