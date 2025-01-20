@@ -9,30 +9,57 @@
     };
     lido-contracts = {
       url = "github:lidofinance/dual-governance?dir=contracts";
-
-      # If you need a specific ref:
-      flake = false;  # Tell Nix this input isn't a flake
-
+      flake = false;
+    };
+    npmlock2nix = {
+      url = "github:nix-community/npmlock2nix";
+      flake = false;
     };
   };
-
-  outputs = { self, nixpkgs, flake-utils, solc, lido-contracts }:
+  outputs = { self, nixpkgs, flake-utils, solc, lido-contracts, npmlock2nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
             solc.overlay
+            (final: prev: {
+              npmlock2nix = import npmlock2nix { pkgs = final; };
+            })
           ];
         };
+
+        # Create node_modules with OpenZeppelin
+        node_modules = pkgs.npmlock2nix.node_modules {
+          src = ./.;
+          packageJson = pkgs.writeText "package.json" (builtins.toJSON {
+            name = "opt-in-stack";
+            dependencies = {
+              "@openzeppelin/contracts" = "^4.9.3";
+            };
+          });
+          packageLockJson = pkgs.writeText "package-lock.json" (builtins.toJSON {
+            name = "opt-in-stack";
+            lockfileVersion = 3;
+            requires = true;
+            packages = {
+              "" = {
+                name = "opt-in-stack";
+                dependencies = {
+                  "@openzeppelin/contracts" = "^4.9.3";
+                };
+              };
+              "node_modules/@openzeppelin/contracts" = {
+                version = "4.9.3";
+                resolved = "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.9.3.tgz";
+                integrity = "sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOl7LwZzjrLAFZZRanFuESoYKOB0I+6cTzWUiHnUbeXsuSXryR5Ny/Mz2A==";
+              };
+            };
+          });
+        };
+
         hPkgs = pkgs.haskell.packages."ghc963";
-        nodeEnv = pkgs.buildEnv {
-          name = "node-env";
-          paths = [
-            pkgs.nodejs
-            pkgs.nodePackages.npm
-          ];
-        };
+
         devTools = [
           hPkgs.ghc
           pkgs.zlib
@@ -42,8 +69,10 @@
           pkgs.secp256k1
           stack-wrapped
           (solc.mkDefault pkgs pkgs.solc_0_8_26)
-          nodeEnv
+          pkgs.nodejs
+          pkgs.nodePackages.npm
         ];
+
         stack-wrapped = pkgs.symlinkJoin {
           name = "stack";
           paths = [ pkgs.stack ];
@@ -63,19 +92,20 @@
           shellHook = ''
             ln -sf ${pkgs.llvmPackages.clang}/bin/clang $PWD/gcc
             export PATH=$PWD:$PATH
-            export NODE_PATH="$PWD/node_modules"
-            export NPM_CONFIG_PREFIX="$PWD/.npm-global"
-            export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
-            mkdir -p $NPM_CONFIG_PREFIX
 
-            # Create contracts directory and symlink the Lido contracts
+            # Set up node_modules with OpenZeppelin
+            ln -sf ${node_modules}/node_modules .
+            export NODE_PATH=${node_modules}/node_modules
+            export PATH=${node_modules}/node_modules/.bin:$PATH
+
+            # Link Lido contracts
             ln -sfn ${lido-contracts} lido
             cp -r $PWD/lido/contracts/* $PWD
 
-
             # Create symlink for OpenZeppelin at root if node_modules exists
+            mkdir "@openzeppelin"
             if [ -d "node_modules/@openzeppelin" ]; then
-              cp -r $PWD/node_modules/@openzeppelin/* $PWD/@openzeppelin/
+              ln -sf $PWD/node_modules/@openzeppelin/* $PWD/@openzeppelin/
             fi
           '';
         };
