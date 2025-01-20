@@ -69,11 +69,9 @@
             mkdir -p $NPM_CONFIG_PREFIX
 
             # Create contracts directory and symlink the Lido contracts
-            for file in $(find ${lido-contracts} -type f); do
-              relative_path=''${file#${lido-contracts}/}
-              mkdir -p "$(dirname "$relative_path")"
-              ln -sf "$file" "$relative_path"
-            done
+            ln -sfn ${lido-contracts} lido
+            cp -r $PWD/lido/contracts/* $PWD
+
 
             # Create symlink for OpenZeppelin at root if node_modules exists
             if [ -d "node_modules/@openzeppelin" ]; then
