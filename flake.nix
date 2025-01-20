@@ -7,9 +7,14 @@
       url = "github:hellwolf/solc.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    lido-contracts = {
+      url = "github:lidofinance/dual-governance";
+      # If you need a specific ref:
+      # rev = "abc123";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, solc }:
+  outputs = { self, nixpkgs, flake-utils, solc, lido-contracts }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
