@@ -67,12 +67,13 @@
             export NPM_CONFIG_PREFIX="$PWD/.npm-global"
             export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
             mkdir -p $NPM_CONFIG_PREFIX
+            npm install
 
             # Create contracts directory and symlink the Lido contracts
             ln -sfn ${lido-contracts} lido
             cp -r $PWD/lido/contracts/* $PWD
 
-
+            mkdir -p @openzeppelin
             # Create symlink for OpenZeppelin at root if node_modules exists
             if [ -d "node_modules/@openzeppelin" ]; then
               cp -r $PWD/node_modules/@openzeppelin/* $PWD/@openzeppelin/
