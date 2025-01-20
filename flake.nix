@@ -9,10 +9,10 @@
     };
     lido-contracts = {
       url = "github:lidofinance/dual-governance?dir=contracts";
+
       # If you need a specific ref:
       flake = false;  # Tell Nix this input isn't a flake
 
-      # rev = "abc123";
     };
   };
 
@@ -75,7 +75,7 @@
 
             # Create symlink for OpenZeppelin at root if node_modules exists
             if [ -d "node_modules/@openzeppelin" ]; then
-              mv $PWD/node_modules/@openzeppelin/ $PWD/@openzeppelin/
+              cp -r $PWD/node_modules/@openzeppelin/* $PWD/@openzeppelin/
             fi
           '';
         };
