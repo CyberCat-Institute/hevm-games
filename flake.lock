@@ -36,6 +36,24 @@
         "type": "github"
       }
     },
+    "lido-contracts": {
+      "flake": false,
+      "locked": {
+        "dir": "contracts",
+        "lastModified": 1735126240,
+        "narHash": "sha256-+mGUkXJbRj9ZLxIRzGtDp34Qkp1iDSv4tXN5ENWs2M8=",
+        "owner": "lidofinance",
+        "repo": "dual-governance",
+        "rev": "46d667ea83a461884365f8468bc48a25ca59217b",
+        "type": "github"
+      },
+      "original": {
+        "dir": "contracts",
+        "owner": "lidofinance",
+        "repo": "dual-governance",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1734424634,
@@ -55,6 +73,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "lido-contracts": "lido-contracts",
         "nixpkgs": "nixpkgs",
         "solc": "solc"
       }
