@@ -8,8 +8,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     lido-contracts = {
-      url = "github:lidofinance/dual-governance";
+      url = "github:lidofinance/dual-governance?dir=contracts";
       # If you need a specific ref:
+      flake = false;  # Tell Nix this input isn't a flake
+
       # rev = "abc123";
     };
   };
@@ -65,6 +67,13 @@
             export NPM_CONFIG_PREFIX="$PWD/.npm-global"
             export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
             mkdir -p $NPM_CONFIG_PREFIX
+
+            # Create contracts directory and symlink the Lido contracts
+            for file in $(find ${lido-contracts} -type f); do
+              relative_path=''${file#${lido-contracts}/}
+              mkdir -p "$(dirname "$relative_path")"
+              ln -sf "$file" "$relative_path"
+            done
 
             # Create symlink for OpenZeppelin at root if node_modules exists
             if [ -d "node_modules/@openzeppelin" ]; then
