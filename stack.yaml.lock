@@ -79,15 +79,15 @@ packages:
     commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
     git: https://github.com/ethereum/hevm
 - completed:
-    commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
+    commit: 79b8ebf93421c32c5e72b35ed78ce64e8d743b0c
     git: https://github.com/CyberCat-Institute/open-game-engine/
     name: open-games-hs
     pantry-tree:
-      sha256: b215fe582ee51ff560ba1da539f12a228df3b8f16385a906f2491a51c0e6ecb4
+      sha256: b96069ca3b65b3c9f6e35f7bff0f8857d429b54490278db9cbf0db414df0a8b8
       size: 7361
     version: 0.1.0.0
   original:
-    commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
+    commit: 79b8ebf93421c32c5e72b35ed78ce64e8d743b0c
     git: https://github.com/CyberCat-Institute/open-game-engine/
 snapshots:
 - completed:

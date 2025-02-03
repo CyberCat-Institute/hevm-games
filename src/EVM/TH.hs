@@ -20,7 +20,7 @@ import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.State.Strict (State, put)
 import Data.ByteString (ByteString)
 import Data.Map as Map
-import Data.Text (Text, intercalate, pack, toLower, unpack)
+import Data.Text as T (Text, breakOn, drop, intercalate, pack, toLower, unpack, isPrefixOf)
 import Data.Text.IO (readFile)
 import Data.Maybe (fromMaybe)
 import qualified Data.Tree.Zipper as Zipper
@@ -42,6 +42,9 @@ import Optics.Core
 import Optics.State
 import Optics.State.Operators
 import Prelude hiding (FilePath, readFile)
+import Data.List (nub)
+
+import Debug.Trace
 
 -- put this in sttate.callData
 -- run it to execute the transaction
@@ -189,8 +192,8 @@ mkContractFileInfo = ContractFileInfo'
 
 pat = VarP . mkName
 
-generateTxFactory :: Method -> Integer -> Text -> Q Dec
-generateTxFactory (Method _ args name sig _) addr contractName = do
+generateTxFactory :: Text -> Method -> Integer -> Text -> Q Dec
+generateTxFactory moduleName (Method _ args name sig _) addr contractName = do
   runIO $ print ("arguments for method " <> name <> ":" <> pack (show args))
   let signatureString :: Q Exp = pure $ LitE $ StringL $ unpack sig
   let argExp :: Q Exp = ListE <$> traverse (\(nm, ty) -> constructorExprForType ty (mkName $ unpack nm)) args
@@ -208,7 +211,7 @@ generateTxFactory (Method _ args name sig _) addr contractName = do
       |]
   pure $
     FunD
-      (mkName (unpack (toLower contractName <> "_" <> name)))
+      (mkName (unpack (toLower moduleName <> "_" <> toLower contractName <> "_" <> name)))
       [ Clause
           ( [pat "src", pat "amt", pat "gas"]
               ++ patterns
@@ -240,6 +243,10 @@ loadAll contracts = do
       |]
   pure (init ++ methods ++ contractNames)
   where
+    takeAfterColon :: Text -> Text
+    takeAfterColon txt =
+      case breakOn ":" txt of
+        (_, rest) -> T.drop 1 rest
                         -- Address, Contract name, Bound name
     generateContractMap :: [(Integer, ContractInfo' SolcContract)] -> [(Integer, ByteString)]
     generateContractMap = fmap (\(i, contract) -> (i, contract.payload.runtimeCode))
@@ -248,7 +255,7 @@ loadAll contracts = do
     generateDefsForMethods [] = pure []
     generateDefsForMethods ((hash, ContractInfo' name boundName contract) : xs) = do
       let methods = Map.elems contract.abiMap
-      traverse (\x -> generateTxFactory x hash boundName) methods
+      traverse (\x -> generateTxFactory (takeAfterColon contract.contractName) x hash boundName) methods
 
     contractName :: Text -> Integer -> Q Dec
     contractName binder value = do

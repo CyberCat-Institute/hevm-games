@@ -46,7 +46,7 @@ extra-deps:
   - git: https://github.com/ethereum/hevm
     commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
   - git: https://github.com/CyberCat-Institute/open-game-engine/
-    commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
+    commit: 79b8ebf93421c32c5e72b35ed78ce64e8d743b0c
 
 
   # - HSH-2.1.3@sha256:71ded11b224f5066373ce985ec63b10c87129850b33916736dd64fa2bea9ea0a,1705
