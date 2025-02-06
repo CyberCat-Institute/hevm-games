@@ -31,7 +31,7 @@ import EVM.Expr
 import EVM.FeeSchedule
 import EVM.Fetch
 import EVM.Prelude
-import EVM.Solidity (Contracts (..), Method (..), SolcContract (..), readStdJSON, solcRuntime, solidity, solc, Language(..))
+import EVM.Solidity
 import EVM.Stepper
 import EVM.Transaction (initTx)
 import EVM.Types
@@ -255,7 +255,21 @@ loadAll contracts = do
     generateDefsForMethods [] = pure []
     generateDefsForMethods ((hash, ContractInfo' name boundName contract) : xs) = do
       let methods = Map.elems contract.abiMap
-      traverse (\x -> generateTxFactory (takeAfterColon contract.contractName) x hash boundName) methods
+      let noDups = handleDuplicates methods Map.empty
+      traverse (\x -> generateTxFactory (takeAfterColon contract.contractName) x hash boundName)
+          noDups
+
+    handleDuplicates :: [Method] -> Map Text Int -> [Method]
+    handleDuplicates [] _ = []
+    handleDuplicates (x : xs) counts = let
+      currentName = view #name x
+      count = Map.findWithDefault 0 currentName counts
+      newCounts = Map.insert currentName (count + 1) counts
+      newName = if count == 0
+                   then currentName
+                   else currentName <> pack (show (count + 1))
+      newMethod = set #name newName x
+      in newMethod : handleDuplicates xs newCounts
 
     contractName :: Text -> Integer -> Q Dec
     contractName binder value = do
