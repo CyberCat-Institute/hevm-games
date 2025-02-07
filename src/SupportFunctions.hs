@@ -62,17 +62,10 @@ stakeOrUnstake :: Agent -> StETH -> GlobalLidoState -> SignallingEscrowState
 stakeOrUnstake name amount globalLidoState signallingEscrowState
   = let newState | (amount >= 0) = stakeStETH name amount globalLidoState signallingEscrowState
                  | (otherwise)   = unstakeStETH name (-amount) globalLidoState signallingEscrowState
-     in case newState of {
+     in pure $ case newState of {
           Just (newGlobalLidoState, newSignallingEscrowState) -> (newGlobalLidoState, newSignallingEscrowState)
         ; Nothing -> (globalLidoState, signallingEscrowState)
     }
-
-stakeOrUnstakeReal :: Agent -> StETH -> AccountState -- GlobalLidoState -> SignallingEscrowState
-               -> IO (AccountState, SignallingEscrowState)
-stakeOrUnstakeReal name amount accounts
-  = do escrow_lockStETH name amount
-       st <- dualgov_getEffectiveState name
-       pure (subtract accounts name amount, st)
 
 
 -- Helper to sum over all accounts

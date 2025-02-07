@@ -24,6 +24,16 @@ import OpenGames.Preprocessor
 Describes all the major components of our models
 ------------------------------------------------}
 
+  -- this above needs to communicate with the contract
+  -- The signaling state is internalised in the contract
+  -- we use `fromFunction` but from HEVMGAmes to run it
+  -- stakeOrUnstakeHEVM sends teh transactions
+  -- the payoff is computed from GlobalLidoState & SignallingEscrowState
+  -- to do :
+  --  - [x] fix conflicting import methods from dependencies
+  --  - [ ] setup the contract to run in the first place
+  --  - [ ] run it and pray it works
+
 
 ------------------
 -- 1 Staking model
@@ -70,16 +80,6 @@ stakingGame governanceParams stakingAgent actionSpace  = [opengame|
                            -> stakeOrUnstake stakingAgent amountStaked globalLidoState) id;
   outputs: (newGlobalLidoState, newSignallingEscrowState);
   returns: ;
-
--- this above needs to communicate with the contract
--- The signaling state is internalised in the contract
--- we use `fromFunction` but from HEVMGAmes to run it
--- stakeOrUnstakeHEVM sends teh transactions
--- the payoff is computed from GlobalLidoState & SignallingEscrowState
--- to do :
---  - [x] fix conflicting import methods from dependencies
---  - [ ] setup the contract to run in the first place
---  - [ ] run it and pray it works
 
   // Compute actual payoffs as own assets at risk
   inputs: newGlobalLidoState, agentRiskFactor ;
