@@ -211,7 +211,7 @@ generateTxFactory moduleName (Method _ args name sig _) addr contractName = do
       |]
   pure $
     FunD
-      (mkName (unpack (toLower moduleName <> "_" <> toLower contractName <> "_" <> name)))
+      (mkName (unpack (toLower contractName <> "_" <> name)))
       [ Clause
           ( [pat "src", pat "amt", pat "gas"]
               ++ patterns

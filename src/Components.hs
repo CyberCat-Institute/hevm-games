@@ -77,9 +77,9 @@ stakingGame governanceParams stakingAgent actionSpace  = [opengame|
 -- stakeOrUnstakeHEVM sends teh transactions
 -- the payoff is computed from GlobalLidoState & SignallingEscrowState
 -- to do :
---  - fix conflicting import methods from dependencies
---  - setup the contarct to run in the first place
---  - run it and pray it works
+--  - [x] fix conflicting import methods from dependencies
+--  - [ ] setup the contract to run in the first place
+--  - [ ] run it and pray it works
 
   // Compute actual payoffs as own assets at risk
   inputs: newGlobalLidoState, agentRiskFactor ;

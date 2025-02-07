@@ -118,7 +118,7 @@ data GlobalLidoState = GlobalLidoState {
 } deriving (Show, Eq, Ord)
 
 data AccountState = AccountState {
-  accountsStETH    :: Account StETH  -- Include accounts (this only includes the stETH contained outside the escrow)
+  getAccountsStETH    :: Account StETH  -- Include accounts (this only includes the stETH contained outside the escrow)
 } deriving (Show, Eq, Ord)
 
 -- State of signalling escrow
