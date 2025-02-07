@@ -51,6 +51,15 @@ optionsPlayer2 =
 
 sendAndRunBoth (a, b) = sendAndRunAll [a, b]
 
+hevmDilemma
+  :: HEVMGame
+       [() -> EthTransaction, () -> EthTransaction]
+       [HEVMState (DiagnosticInfoBayesian () EthTransaction)
+       ,HEVMState (DiagnosticInfoBayesian () EthTransaction)]
+       ()
+       ()
+       ()
+       ()
 hevmDilemma =
   [opengame|
   inputs : ;
