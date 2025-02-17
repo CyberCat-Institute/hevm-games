@@ -83,16 +83,17 @@ computeRiskCosts (f,amount)
 -- Derive individual risk of assets
 -- NOTE we are including the publicly known risk for assets with an only privately known assessment
 -- (in case the latter is 1 it is the same as the public one)
-computeAssetsAtRisk :: Agent -> (AccountState, RiskFactor) -> RiskFactor -> Payoff
-computeAssetsAtRisk agent (wallet,riskFactorPrivate) riskFactorPublic =
-  let assetsAgent = M.lookup agent wallet
+computeAssetsAtRisk :: Agent -> (GlobalLidoState, RiskFactor) -> RiskFactor -> Payoff
+computeAssetsAtRisk agent (state, riskFactorPrivate) riskFactorPublic =
+  let wallet      = accountsStETH state
+      assetsAgent = M.lookup agent wallet
       in case assetsAgent of
            Nothing -> 0
            Just value -> value * riskFactorPublic *riskFactorPrivate
 
-computeAssetsAtRisk' :: Agent -> (GlobalLidoState, RiskFactorEVM) -> RiskFactorEVM -> W256
-computeAssetsAtRisk' agent (state,riskFactorPrivate) riskFactorPublic =
-  let wallet      = accountsStETH state
+computeAssetsAtRisk' :: Agent -> (AccountState, RiskFactorEVM) -> RiskFactorEVM -> W256
+computeAssetsAtRisk' agent (state, riskFactorPrivate) riskFactorPublic =
+  let wallet      = getAccountsStETH state
       assetsAgent = M.lookup agent wallet
       in case assetsAgent of
            Nothing -> 0
