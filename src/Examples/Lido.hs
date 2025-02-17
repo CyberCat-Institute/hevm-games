@@ -24,12 +24,12 @@ import EVM.Types (VM, W256, VMType(..))
 $(loadAll [mkContractFileInfo "DualGovernance.sol" [mkContractInfo "DualGovernance" "dualgov"]
           ,mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
 
--- stakeOrUnstakeReal :: Agent -> StETH -> AccountState -- GlobalLidoState -> SignallingEscrowState
---                -> IO (AccountState, SignallingEscrowState)
--- stakeOrUnstakeReal name amount accounts
---   = do escrow_lockStETH name amount
---        st <- dualgov_getEffectiveState name
---        pure (subtract accounts name amount, st)
+stakeOrUnstakeReal :: Agent -> StETH -> AccountState -- GlobalLidoState -> SignallingEscrowState
+               -> IO (AccountState, SignallingEscrowState)
+stakeOrUnstakeReal name amount accounts
+  = do escrow_lockStETH name amount
+       st <- dualgov_getEffectiveState name
+       pure (subtract accounts name amount, st)
 --
 --
 -- Decision of representative stETH holder (aka staker) to lock or unlock funds from signalling escrow

@@ -194,7 +194,7 @@ pat = VarP . mkName
 
 generateTxFactory :: Text -> Method -> Integer -> Text -> Q Dec
 generateTxFactory moduleName (Method _ args name sig _) addr contractName = do
-  runIO $ print ("arguments for method " <> name <> ":" <> pack (show args))
+  runIO $ print ("module " <> moduleName <> ", arguments for method " <> name <> ":" <> pack (show args))
   let signatureString :: Q Exp = pure $ LitE $ StringL $ unpack sig
   let argExp :: Q Exp = ListE <$> traverse (\(nm, ty) -> constructorExprForType ty (mkName $ unpack nm)) args
   let patterns :: [Pat] = fmap (VarP . mkName . unpack . fst) args
@@ -233,7 +233,8 @@ loadAll :: [ContractFileInfo] -> Q [Dec]
 loadAll contracts = do
   allContracts <- runIO $ traverse loadSolcInfo contracts
   let allContractsHash = zip [ 0x1000.. ] (concat allContracts)
-  methods <- generateDefsForMethods allContractsHash
+  runIO $ putStrLn ("contracts: " <> unwords (fmap (unpack . name) (concat allContracts)))
+  methods <- concat <$> traverse generateDefsForMethods allContractsHash
   let contractMap = generateContractMap allContractsHash
   contractNames <- traverse (\(addr, ContractInfo' nm bn con) -> contractName bn addr) allContractsHash
   -- traverse (\(ix, ContractFileInfo _ nm) -> contractName nm ix) (zip [0x1000 ..] contracts)
@@ -251,9 +252,8 @@ loadAll contracts = do
     generateContractMap :: [(Integer, ContractInfo' SolcContract)] -> [(Integer, ByteString)]
     generateContractMap = fmap (\(i, contract) -> (i, contract.payload.runtimeCode))
                         -- Address, Contract name, Bound name
-    generateDefsForMethods :: [(Integer, ContractInfo' SolcContract)] -> Q [Dec]
-    generateDefsForMethods [] = pure []
-    generateDefsForMethods ((hash, ContractInfo' name boundName contract) : xs) = do
+    generateDefsForMethods :: (Integer, ContractInfo' SolcContract) -> Q [Dec]
+    generateDefsForMethods (hash, ContractInfo' name boundName contract) = do
       let methods = Map.elems contract.abiMap
       let noDups = handleDuplicates methods Map.empty
       traverse (\x -> generateTxFactory (takeAfterColon contract.contractName) x hash boundName)
