@@ -5,6 +5,7 @@ module Types
   where
 
 import OpenGames.Engine.Engine
+import EVM.Types (W256)
 
 import qualified Data.Map.Strict as M
 import Data.Time
@@ -34,6 +35,7 @@ deriving instance (Show a,Show b,Show c,Show d,Show e,Show f,Show g,Show h,Show 
 
 type ETH = Double
 type StETH = ETH
+type StETH' = W256
 type WstETH = ETH
 type WithdrawlNFT = StETH
 type LDO = Double
@@ -62,6 +64,7 @@ type ResealCommittee = Agent
 type TieBreakerCommittee = Agent
 
 type RiskFactor = Double
+type RiskFactorEVM = W256
 type OpportunityCosts = Double
 
 
@@ -118,8 +121,8 @@ data GlobalLidoState = GlobalLidoState {
 } deriving (Show, Eq, Ord)
 
 data AccountState = AccountState {
-  getAccountsStETH    :: Account StETH  -- Include accounts (this only includes the stETH contained outside the escrow)
-} deriving (Show, Eq, Ord)
+  getAccountsStETH    :: Account StETH'  -- Include accounts (this only includes the stETH contained outside the escrow)
+
 
 -- State of signalling escrow
 -- See https://github.com/lidofinance/dual-governance/blob/develop/docs/mechanism.md#signalling-escrow

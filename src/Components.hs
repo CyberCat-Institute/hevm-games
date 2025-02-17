@@ -24,16 +24,6 @@ import OpenGames.Preprocessor
 Describes all the major components of our models
 ------------------------------------------------}
 
-  -- this above needs to communicate with the contract
-  -- The signaling state is internalised in the contract
-  -- we use `fromFunction` but from HEVMGAmes to run it
-  -- stakeOrUnstakeHEVM sends teh transactions
-  -- the payoff is computed from GlobalLidoState & SignallingEscrowState
-  -- to do :
-  --  - [x] fix conflicting import methods from dependencies
-  --  - [ ] setup the contract to run in the first place
-  --  - [ ] run it and pray it works
-
 
 ------------------
 -- 1 Staking model
@@ -54,7 +44,7 @@ stakingGame :: (Eq a, Show a)
                         (SignallingEscrowState, GovernanceState, GovernanceValues)
                         Payoff
 stakingGame governanceParams stakingAgent actionSpace  = [opengame|
-  inputs: globalLidoState, currentTime, currentDGState, currentDGValues, proposal, opportunityCostFactor, agentRiskFactor;
+  inputs: globalLidoState, currentTime, currentSignallingEscrowState, currentDGState, currentDGValues, proposal, opportunityCostFactor, agentRiskFactor;
   feedback: ;
 
   :---:
@@ -74,10 +64,10 @@ stakingGame governanceParams stakingAgent actionSpace  = [opengame|
   returns: ;
 
   // Transfer funds between staker's wallet and signalling escrow
-  inputs: amountStaked, globalLidoState;
+  inputs: amountStaked, globalLidoState, currentSignallingEscrowState;
   feedback: ;
-  operation: fromFunctions (\(amountStaked, globalLidoState)
-                           -> stakeOrUnstake stakingAgent amountStaked globalLidoState) id;
+  operation: fromFunctions (\(amountStaked, globalLidoState, currentSignallingEscrowState)
+                           -> stakeOrUnstake stakingAgent amountStaked globalLidoState currentSignallingEscrowState) id;
   outputs: (newGlobalLidoState, newSignallingEscrowState);
   returns: ;
 
@@ -237,10 +227,10 @@ stakingSignalFollowerGame governanceParams stakingAgent actionSpace  = [opengame
   returns: ;
 
   // Transfer funds between staker's wallet and signalling escrow
-  inputs: amountStaked, globalLidoState, ;
+  inputs: amountStaked, globalLidoState, currentSignallingEscrowState;
   feedback: ;
-  operation: fromFunctions (\(amountStaked, globalLidoState )
-                           -> stakeOrUnstake stakingAgent amountStaked globalLidoState ) id;
+  operation: fromFunctions (\(amountStaked, globalLidoState, currentSignallingEscrowState)
+                           -> stakeOrUnstake stakingAgent amountStaked globalLidoState currentSignallingEscrowState) id;
   outputs: (newGlobalLidoState, newSignallingEscrowState);
   returns: ;
 

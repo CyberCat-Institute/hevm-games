@@ -9,6 +9,8 @@ import Types
 
 import OpenGames.Engine.Engine
 
+import EVM.Types
+
 {-------------------------------------------------------
 Contains basic auxiliary functionality needed for model,
 including implementation of the DG state machine
@@ -58,11 +60,11 @@ unstakeStETH name amount globalLidoState signallingEscrowState
 -- Transfer a positive or negative ammount from global account to escrow account
 -- owned by the same agent. Fails silently and returns initial state if the transfer fails
 stakeOrUnstake :: Agent -> StETH -> GlobalLidoState -> SignallingEscrowState
-               -> IO (GlobalLidoState, SignallingEscrowState)
+               -> (GlobalLidoState, SignallingEscrowState)
 stakeOrUnstake name amount globalLidoState signallingEscrowState
   = let newState | (amount >= 0) = stakeStETH name amount globalLidoState signallingEscrowState
                  | (otherwise)   = unstakeStETH name (-amount) globalLidoState signallingEscrowState
-     in pure $ case newState of {
+     in case newState of {
           Just (newGlobalLidoState, newSignallingEscrowState) -> (newGlobalLidoState, newSignallingEscrowState)
         ; Nothing -> (globalLidoState, signallingEscrowState)
     }
@@ -81,13 +83,20 @@ computeRiskCosts (f,amount)
 -- Derive individual risk of assets
 -- NOTE we are including the publicly known risk for assets with an only privately known assessment
 -- (in case the latter is 1 it is the same as the public one)
-computeAssetsAtRisk :: Agent -> (GlobalLidoState, RiskFactor) -> RiskFactor -> Payoff
-computeAssetsAtRisk agent (state,riskFactorPrivate) riskFactorPublic =
+computeAssetsAtRisk :: Agent -> (AccountState, RiskFactor) -> RiskFactor -> Payoff
+computeAssetsAtRisk agent (wallet,riskFactorPrivate) riskFactorPublic =
+  let assetsAgent = M.lookup agent wallet
+      in case assetsAgent of
+           Nothing -> 0
+           Just value -> value * riskFactorPublic *riskFactorPrivate
+
+computeAssetsAtRisk' :: Agent -> (GlobalLidoState, RiskFactorEVM) -> RiskFactorEVM -> W256
+computeAssetsAtRisk' agent (state,riskFactorPrivate) riskFactorPublic =
   let wallet      = accountsStETH state
       assetsAgent = M.lookup agent wallet
       in case assetsAgent of
            Nothing -> 0
-           Just value -> value * riskFactorPublic *riskFactorPrivate
+           Just value -> value * riskFactorPublic * riskFactorPrivate
 
 -- Like _computeAssetsAtRisk_ but only considering the public component
 computeAssetsAtRiskPublicOnly :: Agent -> GlobalLidoState -> RiskFactor -> Payoff
