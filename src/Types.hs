@@ -66,6 +66,7 @@ type TieBreakerCommittee = Agent
 type RiskFactor = Double
 type RiskFactorEVM = W256
 type OpportunityCosts = Double
+type OpportunityCostsEVM = W256
 
 data EthAgent = EthAgent { name :: String, addr :: Expr EAddr }
 
@@ -123,7 +124,7 @@ data GlobalLidoState = GlobalLidoState {
 
 data AccountState = AccountState {
   getAccountsStETH    :: Account W256
-}-- Include accounts (this only includes the stETH contained outside the escrow)
+} deriving (Show, Eq, Ord)-- Include accounts (this only includes the stETH contained outside the escrow)
 
 
 -- State of signalling escrow

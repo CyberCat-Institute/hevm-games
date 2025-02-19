@@ -80,6 +80,15 @@ computeRiskCosts (f,amount)
   | amount > 0 = amount*f
   | otherwise  = 0
 
+word2Double :: W256 -> Double
+word2Double x = fromInteger (fromIntegral x)
+
+-- Add costs in case of staking into escrow
+computeRiskCosts' :: (RiskFactorEVM,W256) -> W256
+computeRiskCosts' (f,amount)
+  | amount > 0 = amount * f
+  | otherwise  = 0
+
 -- Derive individual risk of assets
 -- NOTE we are including the publicly known risk for assets with an only privately known assessment
 -- (in case the latter is 1 it is the same as the public one)

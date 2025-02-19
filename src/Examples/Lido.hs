@@ -6,6 +6,9 @@
 
 module Examples.Lido where
 
+import qualified Data.Map.Strict as M
+import Control.Monad.ST (RealWorld)
+
 import EVM.Fetch (zero)
 import EVM.Prelude
 import EVM.Stepper (evm, interpret, runFully)
@@ -34,74 +37,76 @@ lots :: Word64
 lots = 1_000_000
 
 stakeOrUnstakeReal :: EthAgent -> W256 -> AccountState -- GlobalLidoState -> SignallingEscrowState
-               -> IO (AccountState, SignallingEscrowState)
+               -> EVM Concrete RealWorld (AccountState, SignallingEscrowState)
 stakeOrUnstakeReal agent amount accounts
-  = let lockTransaction = escrow_lockStETH (addr agent) 0 lots (fromIntegral amount)
-        stateTransaction = dualgov_getEffectiveState (addr agent) 0 -- do we even need this?
-    in undefined -- pure (subtract accounts (name agent) amount, _)
+  = do let lockTransaction = escrow_lockStETH (addr agent) 0 lots (fromIntegral amount)
+       let stateTransaction = dualgov_getEffectiveState (addr agent) 0 lots -- do we even need this?
+       (result, newState) <- sendAndRunAll [lockTransaction, stateTransaction]
+       pure (subtract accounts (name agent) amount, undefined)
     where
-    subtract = undefined
---        st <- dualgov_getEffectiveState name
+    subtract :: AccountState -> Agent -> W256 -> AccountState
+    subtract st agent amt =
+      AccountState $ M.alter (fmap (\x -> x - amt)) agent (getAccountsStETH st)
+
 --
--- --
--- --
--- -- Decision of representative stETH holder (aka staker) to lock or unlock funds from signalling escrow
--- -- Includes payoff adjustment from locked or unlocked funds
--- --   :: HEVMGame
--- --        [() -> EthTransaction, () -> EthTransaction]
--- --        [HEVMState (DiagnosticInfoBayesian () EthTransaction)
--- --        ,HEVMState (DiagnosticInfoBayesian () EthTransaction)]
--- --        ()
--- --        ()
--- --        ()
--- --        ()
--- stakingGame :: (Eq a, Show a)
---             => GovernanceParams
---             -> Agent
---             -> [Double]
---             -> HEVMGame '[(CurrentProposal a, OpportunityCosts, RiskFactor) -> Double]
---                        '[HEVMState (DiagnosticInfoBayesian (CurrentProposal a, OpportunityCosts, RiskFactor) Double)]
---                         (GlobalLidoState, TimeAbsolute, SignallingEscrowState, GovernanceState, GovernanceValues, CurrentProposal a, OpportunityCosts, RiskFactor)
---                         ()
---                         (SignallingEscrowState, GovernanceState, GovernanceValues)
---                         W256
--- stakingGame governanceParams stakingAgent actionSpace  = [opengame|
---   inputs: globalLidoState, currentTime, currentSignallingEscrowState, currentDGState, currentDGValues, proposal, opportunityCostFactor, agentRiskFactor;
---   feedback: ;
 --
---   :---:
---
---   // Decision of amount to stake or unstake from signalling escrow
---   inputs: proposal, opportunityCostFactor, agentRiskFactor;
---   feedback: ;
---   operation: hevmDecision stakingAgent (actionSpace);
---   outputs: amountStaked;
---   returns: agentPayoff - costsOfStaking;
---
---   // Compute costs of transferring into the escrow
---   inputs:  opportunityCostFactor, amountStaked;
---   feedback: ;
---   operation: fromFunctions computeRiskCosts id;
---   outputs: costsOfStaking;
---   returns: ;
---
---   // Transfer funds between staker's wallet and signalling escrow
---   inputs: amountStaked, globalLidoState, currentSignallingEscrowState;
---   feedback: ;
---   operation: fromFunctions (\(amountStaked, globalLidoState, currentSignallingEscrowState)
---                            -> stakeOrUnstake stakingAgent amountStaked globalLidoState currentSignallingEscrowState) id;
---   outputs: (newGlobalLidoState, newSignallingEscrowState);
---   returns: ;
---
---   // Compute actual payoffs as own assets at risk
---   inputs: newGlobalLidoState, agentRiskFactor ;
---   feedback: agentPayoff ;
---   operation: fromLens id (computeAssetsAtRisk stakingAgent) ;
---   outputs: discard ;
---   returns: payoff;
---
---   :---:
---
---   outputs: newSignallingEscrowState, currentDGState, currentDGValues;
---   returns: payoff;
--- |]
+-- Decision of representative stETH holder (aka staker) to lock or unlock funds from signalling escrow
+-- Includes payoff adjustment from locked or unlocked funds
+--   :: HEVMGame
+--        [() -> EthTransaction, () -> EthTransaction]
+--        [HEVMState (DiagnosticInfoBayesian () EthTransaction)
+--        ,HEVMState (DiagnosticInfoBayesian () EthTransaction)]
+--        ()
+--        ()
+--        ()
+--        ()
+stakingGame :: (Eq a, Show a)
+            => GovernanceParams
+            -> EthAgent
+            -> [W256]
+            -> HEVMGame '[(CurrentProposal a, OpportunityCostsEVM, RiskFactorEVM) -> W256]
+                       '[HEVMState (DiagnosticInfoBayesian (CurrentProposal a, OpportunityCostsEVM, RiskFactorEVM) W256)]
+                        (AccountState, TimeAbsolute, SignallingEscrowState, GovernanceState, GovernanceValues, CurrentProposal a, OpportunityCostsEVM, RiskFactorEVM)
+                        ()
+                        (SignallingEscrowState, GovernanceState, GovernanceValues)
+                        W256
+stakingGame governanceParams stakingAgent actionSpace  = [opengame|
+  inputs: globalLidoState, currentTime, currentSignallingEscrowState, currentDGState, currentDGValues, proposal, opportunityCostFactor, agentRiskFactor;
+  feedback: ;
+
+  :---:
+
+  // Decision of amount to stake or unstake from signalling escrow
+  inputs: proposal, opportunityCostFactor, agentRiskFactor;
+  feedback: ;
+  operation: hevmDecision (name stakingAgent) actionSpace;
+  outputs: amountStaked;
+  returns: agentPayoff - costsOfStaking;
+
+  // Compute costs of transferring into the escrow
+  inputs:  opportunityCostFactor, amountStaked;
+  feedback: ;
+  operation: fromFunctions computeRiskCosts' id;
+  outputs: costsOfStaking;
+  returns: ;
+
+  // Transfer funds between staker's wallet and signalling escrow
+  inputs: amountStaked, globalLidoState, currentSignallingEscrowState;
+  feedback: ;
+  operation: fromLensM (\(amountStaked, globalLidoState, currentSignallingEscrowState)
+                           -> stakeOrUnstakeReal stakingAgent amountStaked globalLidoState) (const pure);
+  outputs: (newGlobalLidoState, newSignallingEscrowState);
+  returns: ;
+
+  // Compute actual payoffs as own assets at risk
+  inputs: newGlobalLidoState, agentRiskFactor ;
+  feedback: agentPayoff ;
+  operation: fromLens id (computeAssetsAtRisk' (name stakingAgent)) ;
+  outputs: discard ;
+  returns: payoff;
+
+  :---:
+
+  outputs: newSignallingEscrowState, currentDGState, currentDGValues;
+  returns: payoff;
+|]
