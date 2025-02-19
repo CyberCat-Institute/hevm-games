@@ -331,6 +331,9 @@ sendAndRun tx st = do
 adjustOrAdd :: (Ord k) => (v -> v) -> v -> k -> Map.Map k v -> Map.Map k v
 adjustOrAdd f def = alter (Just . maybe def f)
 
+-- Create addresses with corresponding amounts.
+-- If the address does not exist, create it, if it exists, add the amount given
+-- This is useful to initialise players and contracts at the beginning
 setupAddresses :: [(Expr EAddr, Expr EWord)] -> VM Concrete s -> VM Concrete s
 setupAddresses amounts =
   over (#env % #contracts) (updateContractMap amounts)

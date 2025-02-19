@@ -21,17 +21,14 @@ import SupportFunctions
 
 import OpenGames hiding (dependentDecision, fromFunctions, fromLens, forwardFunction)
 import OpenGames.Engine.HEVMGames
-import OpenGames.Preprocessor
+import OpenGames.Preprocessor hiding (Lit)
 
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, execStateT, modify)
 import EVM.Types (VM, W256, VMType(..))
 
--- maybe we don't need dual gov
+-- maybe we need one more for extracting the state?
 $(loadAll [mkContractFileInfo "DualGovernance.sol" [mkContractInfo "DualGovernance" "dualgov"]
           ,mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
-
--- escrow_contract :: Expr EAddr
--- escrow_contract = undefined
 
 lots :: Word64
 lots = 1_000_000
@@ -110,3 +107,24 @@ stakingGame governanceParams stakingAgent actionSpace  = [opengame|
   outputs: newSignallingEscrowState, currentDGState, currentDGValues;
   returns: payoff;
 |]
+
+player1 = LitAddr 0x1234
+player2 = LitAddr 0x1235
+
+transactions :: [W256]
+transactions = undefined
+
+lidoOutcome = do
+  let addresses =
+        [ (player1, Lit 1_000_000_000),
+          (player2, Lit 1_000_000_000),
+          (dualgov_contract, Lit 10_000),
+          (escrow_contract, Lit 10_001)
+        ]
+  i <- setupAddresses addresses <$> stToIO initial
+  let game = stakingGame undefined undefined playerTransactions
+  let what = evaluate game  undefined undefined
+  _
+  -- evaluated1 <- stToIO (evalStateT aaa i)
+  -- evaluated2 <- stToIO (evalStateT bbb i)
+  -- let out1 = generateOutputStr (evaluated1 :- evaluated2 :- Nil)
