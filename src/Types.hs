@@ -1,11 +1,12 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Types
   where
 
 import OpenGames.Engine.Engine
-import EVM.Types (W256)
+import EVM.Types (W256, Expr, EType(..))
 
 import qualified Data.Map.Strict as M
 import Data.Time
@@ -35,7 +36,6 @@ deriving instance (Show a,Show b,Show c,Show d,Show e,Show f,Show g,Show h,Show 
 
 type ETH = Double
 type StETH = ETH
-type StETH' = W256
 type WstETH = ETH
 type WithdrawlNFT = StETH
 type LDO = Double
@@ -67,6 +67,7 @@ type RiskFactor = Double
 type RiskFactorEVM = W256
 type OpportunityCosts = Double
 
+data EthAgent = EthAgent { name :: String, addr :: Expr EAddr }
 
 -------------
 -- 4 Accounts
@@ -121,7 +122,7 @@ data GlobalLidoState = GlobalLidoState {
 } deriving (Show, Eq, Ord)
 
 data AccountState = AccountState {
-  getAccountsStETH    :: Account StETH'
+  getAccountsStETH    :: Account W256
 }-- Include accounts (this only includes the stETH contained outside the escrow)
 
 

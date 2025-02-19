@@ -12,7 +12,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveLift #-}
 
-module EVM.TH (sendAndRun, sendAndRunAll, sendAndRun', makeTxCall, balance, loadAll
+module EVM.TH (sendAndRun, sendAndRunAll, sendAndRun', sendAndRunDiscard, makeTxCall, balance, loadAll
               , ContractFileInfo, mkContractFileInfo, ContractInfo, mkContractInfo, AbiValue (..), Expr (..), stToIO, setupAddresses, getAllContracts) where
 
 import Control.Monad.ST
@@ -291,28 +291,31 @@ loadSolcInfo (ContractFileInfo' contractFilename modules) = do
     emitMissing (ContractInfo' t s Nothing : xs) = putStrLn ("contract " ++ show t ++ "is missing") >> emitMissing xs
     emitMissing (ContractInfo' t s (Just x) : xs) = (ContractInfo' t s x :) <$> emitMissing xs
 
-run' :: EVM Concrete s (VM Concrete s)
+run' :: EVM Concrete s (Maybe (Expr Buf), VM Concrete s)
 run' = do
   vm <- get
   case vm.result of
     Nothing -> exec1 >> run'
     Just (HandleEffect (Query (PleaseAskSMT (Lit c) _ cont))) ->
-      undefined -- cont (Case (c > 0)) >> run'
-    Just (VMFailure y) -> pure vm
-    Just (VMSuccess y) -> pure vm
+      error "SMT effects not handled"
+    Just (VMFailure y) -> pure (Nothing, vm)
+    Just (VMSuccess y) -> pure (Just y, vm)
 
 -- send and run a transaction on the EVM Concrete state
-sendAndRun' :: EthTransaction -> EVM Concrete RealWorld (VM Concrete RealWorld)
+sendAndRun' :: EthTransaction -> EVM Concrete RealWorld (Maybe (Expr Buf), VM Concrete RealWorld)
 sendAndRun' tx = do
   EVM.TH.makeTxCall tx
-  vm <- run'
-  pure vm
+  run'
 
-sendAndRunAll :: [EthTransaction] -> EVM Concrete RealWorld (VM Concrete RealWorld)
+-- send and run a single transaction, discard the result
+sendAndRunDiscard:: EthTransaction -> EVM Concrete RealWorld (VM Concrete RealWorld)
+sendAndRunDiscard tx = snd <$> sendAndRun' tx
+
+sendAndRunAll :: [EthTransaction] -> EVM Concrete RealWorld (Maybe (Expr Buf), VM Concrete RealWorld)
 sendAndRunAll [transaction] = sendAndRun' transaction
 sendAndRunAll (tx : ts) = do
   EVM.TH.makeTxCall tx
-  vm <- run'
+  _ <- run'
   sendAndRunAll ts
 
 -- exectute the EVM Concrete state in IO
