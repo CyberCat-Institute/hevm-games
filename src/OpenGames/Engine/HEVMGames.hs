@@ -26,6 +26,8 @@ type OpenGameM m a b x s y r = OpenGame (MonadOpticM m W256) (MonadContextM m W2
 
 type HEVMState = StateT (VM Concrete RealWorld) (ST RealWorld)
 
+type HEVMContext = MonadContextM HEVMState W256
+
 type HEVMGame a b x s y r = OpenGameM HEVMState a b x s y r
 
 -- converting words to double for diagnostic reasons

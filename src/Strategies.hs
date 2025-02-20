@@ -10,7 +10,7 @@ module Strategies
 
 import Payoffs
 import SupportFunctions
-import Types
+import Types hiding (GameParametersEVM(..))
 
 import OpenGames.Engine.Engine
 

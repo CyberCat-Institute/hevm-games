@@ -539,21 +539,21 @@ transitionWithTime globalLidoState governanceParams currentTime signallingEscrow
 ------------------------------------
 
 -- Turn state into payoff for StETH stakers for consumption in the staking game
-evaluateProposal :: CurrentProposal ProposalModel -> (Payoff, Payoff)
+evaluateProposal :: Num a => CurrentProposal (ProposalModel' a) -> (a, a)
 evaluateProposal (CurrentProposal (Proposal (ProposalModel benefitToLDOHolders benefitToStETHHolders)) _ Executed)
   = (benefitToLDOHolders, benefitToStETHHolders)
 evaluateProposal _
   = (0, 0)
 
 -- Evaluate a proposal for stakers
-evaluateProposalStakers:: CurrentProposal ProposalModel -> Payoff
+evaluateProposalStakers:: Num a => CurrentProposal (ProposalModel' a) -> a
 evaluateProposalStakers (CurrentProposal (Proposal (ProposalModel _ benefitToStETHHolders)) _ Executed)
   = benefitToStETHHolders
 evaluateProposalStakers _
   = 0
 
 -- Evaluate a proposal for LDO holders
-evaluateProposalLDOs :: CurrentProposal ProposalModel -> Payoff
+evaluateProposalLDOs :: Num a => CurrentProposal (ProposalModel' a) ->  a
 evaluateProposalLDOs (CurrentProposal (Proposal (ProposalModel benefitToLDOHolders _)) _ Executed)
   = benefitToLDOHolders
 evaluateProposalLDOs _

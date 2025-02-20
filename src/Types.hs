@@ -89,10 +89,12 @@ data Proposal a = Proposal a
   deriving (Show, Eq, Ord)
 
 -- Proposal type tracking benefit/cost to each agent type
-data ProposalModel = ProposalModel {
-    benefitToLDOHolders :: Double
-  , benefitToStETHHolders :: Double
+data ProposalModel' a = ProposalModel {
+    benefitToLDOHolders :: a
+  , benefitToStETHHolders :: a
 } deriving (Show, Eq, Ord)
+
+type ProposalModel = ProposalModel' Double
 
 -- Trivial proposal model containing no information
 -- Needed to separate out private beliefs
@@ -210,6 +212,22 @@ type TieBreak = Maybe TieBreakActions
 -- 7 Parameters for game models
 -------------------------------
 
+data GameParametersEVM = GameParametersEVM
+  { governanceParameters  :: GovernanceParams       -- parameters of the DG system
+  , agentDao              :: Agent                  -- name of representative LDO holder
+  , agentStaker           :: Agent                  -- name of representative stETH holder
+  , agentStaker2          :: Agent                  -- name of another representative stETH holder (may be undefined)
+  , opportunityCosts      :: OpportunityCostsEVM       -- opportunity costs of first stETH holder
+  , opportunityCosts2     :: OpportunityCostsEVM       -- opportunity costs of second stETH holder (may be undefined)
+  , agentRiskFactor       :: RiskFactorEVM             -- risk factor of first stETH holder
+  , agentRiskFactor2      :: RiskFactorEVM             -- risk factor of second stETH holder (may be undefined)
+  , globalLidoState       :: AccountState        -- state of entire Lido system
+  , currentTime           :: TimeAbsolute           -- current time
+  , signallingEscrowState :: SignallingEscrowState  -- state of signalling escrow
+  , governanceState       :: GovernanceState        -- state of the DG system
+  , governanceValues      :: GovernanceValues       -- state variables of the DG system
+  , proposal              :: CurrentProposal (ProposalModel' W256)                      -- proposal currently in scope
+  } deriving (Show,Eq)
 -- Parameters bundled for games
 data GameParameters a = GameParameters
   { governanceParameters  :: GovernanceParams       -- parameters of the DG system
