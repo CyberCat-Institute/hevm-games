@@ -65,7 +65,7 @@ stakeOrUnstakeReal agent amount accounts
 stakingGame :: GovernanceParams
             -> EthAgent
             -> [W256]
-            -> HEVMGame '[(CurrentProposal (Proposal W256), OpportunityCostsEVM, RiskFactorEVM) -> W256]
+            -> HEVMGame '[(CurrentProposal (ProposalModel' W256), OpportunityCostsEVM, RiskFactorEVM) -> W256]
                        '[HEVMState (DiagnosticInfoBayesian (CurrentProposal (ProposalModel' W256), OpportunityCostsEVM, RiskFactorEVM) W256)]
                         (AccountState, TimeAbsolute, SignallingEscrowState, GovernanceState, GovernanceValues, CurrentProposal (ProposalModel' W256), OpportunityCostsEVM, RiskFactorEVM)
                         ()
