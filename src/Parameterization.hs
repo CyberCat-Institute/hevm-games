@@ -9,6 +9,8 @@ import SupportFunctions
 import TimeHelperFunctions
 import Types
 
+import EVM.Types (W256, Expr, EType(..))
+
 import OpenGames.Engine.Engine
 
 import Data.Time (UTCTime(..), Day, fromGregorian, addUTCTime, secondsToDiffTime, addUTCTime)
@@ -22,7 +24,7 @@ Defines the main parameterizations used in the analysis
 ----------
 
 -- Construct start days
-firstSeptember = fromGregorian 2024 9 1 
+firstSeptember = fromGregorian 2024 9 1
 
 -- Start day
 startDay =  UTCTime firstSeptember 0
@@ -89,6 +91,13 @@ currentProposal1 = CurrentProposal {
   , proposalState    = Pending
   }
 
+currentProposal1EVM :: CurrentProposal (ProposalModel' W256)
+currentProposal1EVM = CurrentProposal {
+    currentProposal  = Proposal $ ProposalModel {benefitToLDOHolders = 2, benefitToStETHHolders = 1}
+  , timeOfSubmission = lastAugust
+  , proposalState    = Pending
+  }
+
 currentProposal2 :: CurrentProposal ProposalModel
 currentProposal2 = CurrentProposal {
     currentProposal  = proposal2
@@ -106,7 +115,7 @@ simpleStakingGameParameters  = GameParameters
  , agentDao              = "agentDao"
  , agentStaker           = agnt
  , opportunityCosts      = 0.01
- , agentRiskFactor       = 1 
+ , agentRiskFactor       = 1
  , globalLidoState       = globalLidoState'
  , currentTime           = startDay
  , signallingEscrowState = signallingEscrowState'
@@ -117,7 +126,25 @@ simpleStakingGameParameters  = GameParameters
  where
    agnt = "StakingAgent"
    (globalLidoState',signallingEscrowState') =
-     constructInitialStates [(agnt,10)] [(agnt,0)] 1 [(agnt,0)] [(agnt,0)] [(agnt,0)] [(agnt,0)] 
+     constructInitialStates [(agnt,10)] [(agnt,0)] 1 [(agnt,0)] [(agnt,0)] [(agnt,0)] [(agnt,0)]
+
+simpleStakingGameParametersEVM  = GameParametersEVM
+ { governanceParameters  = defaultGovernanceParams
+ , agentDao              = "agentDao"
+ , agentStaker           = agnt
+ , opportunityCosts      = 0
+ , agentRiskFactor       = 1
+ , globalLidoState       = AccountState mempty
+ , currentTime           = startDay
+ , signallingEscrowState = signallingEscrowState'
+ , governanceState       = Normal
+ , governanceValues      = defaultGovernanceValues
+ , proposal              = currentProposal1EVM
+ }
+ where
+   agnt = "StakingAgent"
+   (globalLidoState',signallingEscrowState') =
+     constructInitialStates [(agnt,10)] [(agnt,0)] 1 [(agnt,0)] [(agnt,0)] [(agnt,0)] [(agnt,0)]
 
 modelBasicGameParameters  = GameParameters
  { governanceParameters  = defaultGovernanceParams
@@ -135,7 +162,7 @@ modelBasicGameParameters  = GameParameters
  where
    agnt = "StakingAgent"
    (globalLidoState',signallingEscrowState') =
-     constructInitialStates [(agnt,10)] [(agnt,0)] 1 [(agnt,0)] [(agnt,0)] [(agnt,0)] [(agnt,0)] 
+     constructInitialStates [(agnt,10)] [(agnt,0)] 1 [(agnt,0)] [(agnt,0)] [(agnt,0)] [(agnt,0)]
 
 modelBasicGameParametersTestProposal payoffLDO payoffStETHHolders = GameParameters
  { governanceParameters  = defaultGovernanceParams
@@ -191,8 +218,8 @@ modelHeterogenousParameters = GameParameters
  , agentDao              = "agentDao"
  , agentStaker           = agent1
  , agentStaker2          = agent2
- , opportunityCosts      = 0.01 
- , opportunityCosts2     = 0.01 
+ , opportunityCosts      = 0.01
+ , opportunityCosts2     = 0.01
  , agentRiskFactor       = 1
  , agentRiskFactor2      = 1
  , globalLidoState       = globalLidoState'
@@ -220,8 +247,8 @@ modelHeterogenousGameParametersTestProposal payoffLDO payoffStETHHolders = GameP
  , agentDao              = "agentDao"
  , agentStaker           = agent1
  , agentStaker2          = agent2
- , opportunityCosts      = 0.01 
- , opportunityCosts2     = 0.01 
+ , opportunityCosts      = 0.01
+ , opportunityCosts2     = 0.01
  , agentRiskFactor       = 1
  , agentRiskFactor2      = 1
  , globalLidoState       = globalLidoState'
@@ -249,8 +276,8 @@ modelHeterogenousGameParametersTestProposalAsymmetric payoffLDO payoffStETHHolde
  , agentDao              = "agentDao"
  , agentStaker           = agent1
  , agentStaker2          = agent2
- , opportunityCosts      = 0.01 
- , opportunityCosts2     = 0.01 
+ , opportunityCosts      = 0.01
+ , opportunityCosts2     = 0.01
  , agentRiskFactor       = agntRisk1
  , agentRiskFactor2      = agntRisk2
  , globalLidoState       = globalLidoState'
@@ -278,8 +305,8 @@ modelBayesianGameParametersTestProposal payoffLDO payoffStETHHolders = GameParam
  , agentDao              = "agentDao"
  , agentStaker           = agent1
  , agentStaker2          = agent2
- , opportunityCosts      = 0.01 
- , opportunityCosts2     = 0.01 
+ , opportunityCosts      = 0.01
+ , opportunityCosts2     = 0.01
  , agentRiskFactor       = error "agentRiskFactor1 determined internally"
  , agentRiskFactor2      = error "agentRiskFactor2 determined internally"
  , globalLidoState       = globalLidoState'
@@ -308,8 +335,8 @@ modelBayesianGameParametersTestProposal2 payoffLDO payoffStETHHolders = GamePara
  , agentDao              = "agentDao"
  , agentStaker           = agent1
  , agentStaker2          = agent2
- , opportunityCosts      = 0.01 
- , opportunityCosts2     = 0.01 
+ , opportunityCosts      = 0.01
+ , opportunityCosts2     = 0.01
  , agentRiskFactor       = error "agentRiskFactor1 determined internally"
  , agentRiskFactor2      = error "agentRiskFactor2 determined internally"
  , globalLidoState       = globalLidoState'

@@ -1,11 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedLabels #-}
 
 module Examples.Lido where
+
+import qualified Optics.Core as Op
+import qualified Optics.Operators.Unsafe as Op
 
 import qualified Data.Map.Strict as M
 import Control.Monad.ST (RealWorld)
@@ -30,6 +35,8 @@ import OpenGames.Engine.OpticClass
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, execStateT, modify)
 import EVM.Types (VM, W256, VMType(..))
 
+import Debug.Trace
+
 -- maybe we need one more for extracting the state?
 $(loadAll [mkContractFileInfo "DualGovernance.sol" [mkContractInfo "DualGovernance" "dualgov"]
           ,mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
@@ -43,8 +50,10 @@ stakeOrUnstakeReal agent amount accounts
   = do let lockTransaction = escrow_lockStETH (addr agent) 0 lots (fromIntegral amount)
        -- let stateTransaction = dualgov_getEffectiveState (addr agent) 0 lots -- do we even need this?
        (result, newState) <- sendAndRunAll [lockTransaction]
+       let contracts = Op.preview (#env Op.% #contracts) newState
        -- somehow access dualgov state
-       pure (subtract accounts (name agent) amount, undefined)
+       pure (subtract accounts (name agent) amount,
+          SignallingEscrowState (trace (show contracts) mempty) mempty mempty mempty)
     where
     subtract :: AccountState -> Agent -> W256 -> AccountState
     subtract st agent amt =
@@ -117,31 +126,31 @@ player2 = LitAddr 0x1235
 
 playerAgent = EthAgent "player1" player1
 
+maximumAmount = 100
+
 transactions :: [W256]
-transactions = undefined
+transactions = [0,maximumAmount `div` 2, maximumAmount] -- 0, half, everything
 
-initialAccountState = AccountState (M.fromList [("player1", 100)])
-
-fromGlobalToAccount :: GlobalLidoState -> AccountState
-fromGlobalToAccount = undefined
+initialAccountState = AccountState (M.fromList [("player1", maximumAmount)])
 
 
 lidoOutcome GameParametersEVM{..} = do
   let addresses =
         [ (player1, Lit 1_000_000_000),
           (dualgov_contract, Lit 10_000),
-          (escrow_contract, Lit 10_001)
+          (escrow_contract, Lit 10_000)
         ]
   i <- setupAddresses addresses <$> stToIO initial
-  let game = stakingGame defaultGovernanceParams (playerAgent) transactions
+  let game = stakingGame defaultGovernanceParams playerAgent transactions
   let strat _ = minimum transactions
   let ctxt = MonadContextM
                (pure ((), (globalLidoState, currentTime, signallingEscrowState, governanceState, governanceValues,proposal, opportunityCosts, agentRiskFactor)))
                (\_ _ -> let p = evaluateProposal proposal in pure (snd p))
-                     -- let payoff = snd (evaluateProposal proposal)
-                     -- in pure payoff)
-  let what = evaluate game (strat :- Nil) ctxt
-  undefined
-  -- evaluated1 <- stToIO (evalStateT aaa i)
+  let evaluated :- Nil = evaluate game (strat :- Nil) ctxt
+
+  evaluated1 <- stToIO (evalStateT evaluated i)
   -- evaluated2 <- stToIO (evalStateT bbb i)
   -- let out1 = generateOutputStr (evaluated1 :- evaluated2 :- Nil)
+  generateOutput (evaluated1 :- Nil)
+
+runAll = lidoOutcome simpleStakingGameParametersEVM

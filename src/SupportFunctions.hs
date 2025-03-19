@@ -83,6 +83,10 @@ computeRiskCosts (f,amount)
 word2Double :: W256 -> Double
 word2Double x = fromInteger (fromIntegral x)
 
+-- performs rounding to the nearest integer
+double2Word :: Double -> W256
+double2Word = undefined
+
 -- Add costs in case of staking into escrow
 computeRiskCosts' :: (RiskFactorEVM,W256) -> W256
 computeRiskCosts' (f,amount)
@@ -98,15 +102,18 @@ computeAssetsAtRisk agent (state, riskFactorPrivate) riskFactorPublic =
       assetsAgent = M.lookup agent wallet
       in case assetsAgent of
            Nothing -> 0
-           Just value -> value * riskFactorPublic *riskFactorPrivate
+           Just value -> value * riskFactorPublic * riskFactorPrivate
 
 computeAssetsAtRisk' :: Agent -> (AccountState, RiskFactorEVM) -> RiskFactorEVM -> W256
-computeAssetsAtRisk' agent (state, riskFactorPrivate) riskFactorPublic =
-  let wallet      = getAccountsStETH state
-      assetsAgent = M.lookup agent wallet
-      in case assetsAgent of
-           Nothing -> 0
-           Just value -> value * riskFactorPublic * riskFactorPrivate
+computeAssetsAtRisk' agent (state, riskFactorPrivate) riskFactorPublic
+  | riskFactorPublic == 0 = 0
+  | riskFactorPrivate == 0 = 0
+  | otherwise =
+    let wallet      = getAccountsStETH state
+        assetsAgent = M.lookup agent wallet
+        in case assetsAgent of
+             Nothing -> 0
+             Just value -> value -- double2Word (word2Double value * riskFactorPublic * riskFactorPrivate)
 
 -- Like _computeAssetsAtRisk_ but only considering the public component
 computeAssetsAtRiskPublicOnly :: Agent -> GlobalLidoState -> RiskFactor -> Payoff

@@ -128,7 +128,6 @@ data AccountState = AccountState {
   getAccountsStETH    :: Account W256
 } deriving (Show, Eq, Ord)-- Include accounts (this only includes the stETH contained outside the escrow)
 
-
 -- State of signalling escrow
 -- See https://github.com/lidofinance/dual-governance/blob/develop/docs/mechanism.md#signalling-escrow
 data SignallingEscrowState = SignallingEscrowState {
