@@ -597,6 +597,7 @@ distributionSignals p proposal = do
      value = benefitToStETHHolders  proposal'
 
 -- Random proposal
+randomProposal :: Stochastic (CurrentProposal ProposalModel)
 randomProposal = do
   valueStETHHolders <- uniformDist [(-1),0]
   let proposal' = Proposal $ ProposalModel {benefitToLDOHolders = 1, benefitToStETHHolders = valueStETHHolders}
