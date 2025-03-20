@@ -128,7 +128,8 @@ simpleStakingGameParameters  = GameParameters
    (globalLidoState',signallingEscrowState') =
      constructInitialStates [(agnt,10)] [(agnt,0)] 1 [(agnt,0)] [(agnt,0)] [(agnt,0)] [(agnt,0)]
 
-simpleStakingGameParametersEVM  = GameParametersEVM
+simpleStakingGameParametersEVM  :: GameParametersEVM
+simpleStakingGameParametersEVM  = GameParameters
  { governanceParameters  = defaultGovernanceParams
  , agentDao              = "agentDao"
  , agentStaker           = agnt

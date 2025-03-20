@@ -7,7 +7,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedLabels #-}
 
-module Examples.Lido where
+module Examples.Lido (runAll) where
 
 import qualified Optics.Core as Op
 import qualified Optics.Operators.Unsafe as Op
@@ -131,10 +131,10 @@ maximumAmount = 100
 transactions :: [W256]
 transactions = [0,maximumAmount `div` 2, maximumAmount] -- 0, half, everything
 
-initialAccountState = AccountState (M.fromList [("player1", maximumAmount)])
+-- initialAccountState = AccountState (M.fromList [("player1", maximumAmount)])
 
 
-lidoOutcome GameParametersEVM{..} = do
+lidoOutcome GameParameters{..} = do
   let addresses =
         [ (player1, Lit 1_000_000_000),
           (dualgov_contract, Lit 10_000),
