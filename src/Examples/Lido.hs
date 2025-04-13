@@ -38,7 +38,7 @@ import EVM.Types (VM, W256, VMType(..))
 import Debug.Trace
 
 -- maybe we need one more for extracting the state?
-$(loadAll [mkContractFileInfo "DualGovernance.sol" [mkContractInfo "DualGovernance" "dualgov"]
+$(loadAll [mkContractFileInfo "@openzeppelin/contracts/token/ERC20/ERC20.sol" [mkContractInfo "ERC20" "erc20"]
           ,mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
 
 lots :: Word64
@@ -137,7 +137,7 @@ transactions = [0,maximumAmount `div` 2, maximumAmount] -- 0, half, everything
 lidoOutcome GameParameters{..} = do
   let addresses =
         [ (player1, Lit 1_000_000_000),
-          (dualgov_contract, Lit 10_000),
+          (erc20_contract, Lit 10_000),
           (escrow_contract, Lit 10_000)
         ]
   i <- setupAddresses addresses <$> stToIO initial

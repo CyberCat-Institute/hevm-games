@@ -35,6 +35,7 @@ import EVM.Solidity
 import EVM.Stepper
 import EVM.Transaction (initTx)
 import EVM.Types
+import EVM.Format
 import GHC.IO.Unsafe
 import GHC.ST
 import Language.Haskell.TH.Syntax as TH
@@ -288,24 +289,25 @@ loadSolcInfo (ContractFileInfo' contractFilename modules) = do
   where
     emitMissing :: Show a => [ContractInfo' (Maybe a)] -> IO [ContractInfo' a]
     emitMissing [] = pure []
-    emitMissing (ContractInfo' t s Nothing : xs) = putStrLn ("contract " ++ show t ++ "is missing") >> emitMissing xs
+    emitMissing (ContractInfo' t s Nothing : xs) = putStrLn ("contract " ++ show t ++ " is missing") >> emitMissing xs
     emitMissing (ContractInfo' t s (Just x) : xs) = (ContractInfo' t s x :) <$> emitMissing xs
 
 run' :: EVM Concrete s (Maybe (Expr Buf), VM Concrete s)
 run' = do
   vm <- get
-  case vm.result of
+  trace (unpack $ showTraceTree undefined vm) $ case vm.result of
     Nothing -> exec1 >> run'
     Just (HandleEffect (Query (PleaseAskSMT (Lit c) _ cont))) ->
       error "SMT effects not handled"
-    Just (VMFailure y) -> pure (Nothing, vm)
-    Just (VMSuccess y) -> pure (Just y, vm)
+    Just (VMFailure y) -> pure (trace (show y) Nothing, vm)
+    Just (VMSuccess y) -> pure (trace "finish ok" (Just y), vm)
 
 -- send and run a transaction on the EVM Concrete state
 sendAndRun' :: EthTransaction -> EVM Concrete RealWorld (Maybe (Expr Buf), VM Concrete RealWorld)
 sendAndRun' tx = do
-  EVM.TH.makeTxCall tx
-  run'
+  EVM.TH.makeTxCall (traceShow tx tx)
+  (output, world) <- run'
+  pure (traceShow output (output, world))
 
 -- send and run a single transaction, discard the result
 sendAndRunDiscard:: EthTransaction -> EVM Concrete RealWorld (VM Concrete RealWorld)
