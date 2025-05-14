@@ -25,6 +25,8 @@ import Data.Text.IO (readFile)
 import Data.Maybe (fromMaybe)
 import qualified Data.Tree.Zipper as Zipper
 import Data.Vector as Vector (Vector, fromList, toList)
+
+import Control.Monad
 import EVM (blankState, emptyContract, exec1, initialContract, loadContract, resetState)
 import EVM.Exec (exec, run)
 import EVM.Expr
@@ -232,11 +234,25 @@ instance Lift (Expr 'EAddr) where
 instance Num (Expr 'EAddr) where
   fromInteger i = LitAddr (fromInteger i)
 
+loadFoundry :: Text -> Text -> Q [Dec]
+loadFoundry contractName jsonFile =
+  case fmap (\(a, _, _) -> fromContracts a) (readJSON Foundry contractName jsonFile) of
+       Nothing -> runIO (error "could not read json from foundry")
+       Just c -> loadAllContracts c
+
+fromContracts :: Contracts -> [ContractInfo' SolcContract]
+fromContracts (Contracts cts) = Prelude.map (\(n, c) -> ContractInfo' n n c) (Map.toList cts)
+
+readContracts :: [ContractFileInfo] -> IO [ContractInfo' SolcContract]
+readContracts = fmap concat . traverse loadSolcInfo
+
 loadAll :: [ContractFileInfo] -> Q [Dec]
-loadAll contracts = do
-  allContracts <- runIO $ traverse loadSolcInfo contracts
-  let allContractsHash = zip [ 0x1000.. ] (concat allContracts)
-  runIO $ putStrLn ("contracts: " <> unwords (fmap (unpack . name) (concat allContracts)))
+loadAll = runIO . readContracts >=> loadAllContracts
+
+loadAllContracts :: [ContractInfo' SolcContract] -> Q [Dec]
+loadAllContracts allContracts = do
+  let allContractsHash = zip [ 0x1000.. ] allContracts
+  runIO $ putStrLn ("contracts: " <> unwords (fmap (unpack . name) allContracts))
   methods <- concat <$> traverse generateDefsForMethods allContractsHash
   let contractMap = generateContractMap allContractsHash
   contractNames <- traverse (\(addr, ContractInfo' nm bn con) -> contractName bn addr) allContractsHash
