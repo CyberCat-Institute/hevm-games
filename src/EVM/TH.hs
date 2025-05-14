@@ -131,7 +131,9 @@ loadIntoVM contracts = do
     envForContracts contracts =
       Env
         { contracts = Map.fromList (fmap (fmap bytecodeToContract) contracts),
-          chainId = 0
+          chainId = 0,
+          freshAddresses = 0,
+          freshGasVals = 0
           -- storage = EmptyStore,
           -- origStorage = mempty
         }

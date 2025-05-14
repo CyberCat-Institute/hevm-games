@@ -14,6 +14,7 @@ import qualified Optics.Operators.Unsafe as Op
 
 import qualified Data.Map.Strict as M
 import Control.Monad.ST (RealWorld)
+import GHC.IO (liftIO)
 
 import EVM.Fetch (zero)
 import EVM.Prelude
@@ -28,18 +29,17 @@ import Strategies
 
 import Parameterization
 import OpenGames hiding (dependentDecision, fromFunctions, fromLens, forwardFunction)
-import OpenGames.Engine.HEVMGames
+import OpenGames.Engine.HEVMGames hiding (word2Double)
 import OpenGames.Preprocessor hiding (Lit)
 import OpenGames.Engine.OpticClass
 
-import Control.Monad.Trans.State.Strict (StateT, evalStateT, execStateT, modify)
+import Control.Monad.Trans.State.Strict (StateT, evalStateT, execStateT, modify, get)
 import EVM.Types (VM, W256, VMType(..))
 
 import Debug.Trace
 
 -- maybe we need one more for extracting the state?
-$(loadAll [mkContractFileInfo "@openzeppelin/contracts/token/ERC20/ERC20.sol" [mkContractInfo "ERC20" "erc20"]
-          ,mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
+$(loadAll [mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
 
 lots :: Word64
 lots = 1_000_000
@@ -50,10 +50,15 @@ stakeOrUnstakeReal agent amount accounts
   = do let lockTransaction = escrow_lockStETH (addr agent) 0 lots (fromIntegral amount)
        -- let stateTransaction = dualgov_getEffectiveState (addr agent) 0 lots -- do we even need this?
        (result, newState) <- sendAndRunAll [lockTransaction]
-       let contracts = Op.preview (#env Op.% #contracts) newState
+       let Just environment = Op.preview #env newState
        -- somehow access dualgov state
-       pure (subtract accounts (name agent) amount,
-          SignallingEscrowState (trace (show contracts) mempty) mempty mempty mempty)
+       -- let Just escrow_state = M.lookup escrow_contract contracts
+       -- let ConcreteStore escrow_storage = (Op.view #origStorage escrow_state)
+       let lockedStETHfromEscrow  = mempty -- TODO AND THEN ITS OVER
+       let newAccounts = subtract accounts (name agent) amount
+       trace ("amount " ++ show amount ++ "\nagent: " ++ name agent ++ "\naccounts: " ++ show newAccounts) $ pure (newAccounts,
+          SignallingEscrowState lockedStETHfromEscrow undefined undefined undefined )
+          -- this is problematic, we  are not using the signalling escrow state
     where
     subtract :: AccountState -> Agent -> W256 -> AccountState
     subtract st agent amt =
@@ -124,7 +129,7 @@ stakingGame governanceParams stakingAgent actionSpace  = [opengame|
 player1 = LitAddr 0x1234
 player2 = LitAddr 0x1235
 
-playerAgent = EthAgent "player1" player1
+playerAgent = EthAgent "StakingAgent" player1
 
 maximumAmount = 100
 
@@ -137,7 +142,7 @@ transactions = [0,maximumAmount `div` 2, maximumAmount] -- 0, half, everything
 lidoOutcome GameParameters{..} = do
   let addresses =
         [ (player1, Lit 1_000_000_000),
-          (erc20_contract, Lit 10_000),
+          -- (dualgov_contract, Lit 10_000),
           (escrow_contract, Lit 10_000)
         ]
   i <- setupAddresses addresses <$> stToIO initial
@@ -145,7 +150,13 @@ lidoOutcome GameParameters{..} = do
   let strat _ = minimum transactions
   let ctxt = MonadContextM
                (pure ((), (globalLidoState, currentTime, signallingEscrowState, governanceState, governanceValues,proposal, opportunityCosts, agentRiskFactor)))
-               (\_ _ -> let p = evaluateProposal proposal in pure (snd p))
+               (\_ (newEscrow, _, _) ->
+                  let (_, payoff) = evaluateProposal proposal
+                      lockedStETH' = sumAllAccounts $ lockedStETH newEscrow
+                      support' =  lockedStETH' / (word2Double $ sum $ M.elems $ getAccountsStETH globalLidoState)
+                      in if support' > secondSealRageQuitSupport governanceParameters
+                            then pure 0
+                            else pure payoff)
   let evaluated :- Nil = evaluate game (strat :- Nil) ctxt
 
   evaluated1 <- stToIO (evalStateT evaluated i)

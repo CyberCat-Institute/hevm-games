@@ -11,6 +11,8 @@ import OpenGames.Engine.Engine
 
 import EVM.Types
 
+import GHC.Float
+
 {-------------------------------------------------------
 Contains basic auxiliary functionality needed for model,
 including implementation of the DG state machine
@@ -85,7 +87,7 @@ word2Double x = fromInteger (fromIntegral x)
 
 -- performs rounding to the nearest integer
 double2Word :: Double -> W256
-double2Word = undefined
+double2Word = fromIntegral . double2Int
 
 -- Add costs in case of staking into escrow
 computeRiskCosts' :: (RiskFactorEVM,W256) -> W256
@@ -113,7 +115,7 @@ computeAssetsAtRisk' agent (state, riskFactorPrivate) riskFactorPublic
         assetsAgent = M.lookup agent wallet
         in case assetsAgent of
              Nothing -> 0
-             Just value -> value -- double2Word (word2Double value * riskFactorPublic * riskFactorPrivate)
+             Just value -> value
 
 -- Like _computeAssetsAtRisk_ but only considering the public component
 computeAssetsAtRiskPublicOnly :: Agent -> GlobalLidoState -> RiskFactor -> Payoff
