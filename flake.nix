@@ -12,17 +12,19 @@
 
       # If you need a specific ref:
       flake = false;  # Tell Nix this input isn't a flake
-
     };
+    foundry.url = "github:shazow/foundry.nix/stable"; # Use stable branch for permanent releases
+
   };
 
-  outputs = { self, nixpkgs, flake-utils, solc, lido-contracts }:
+  outputs = { self, nixpkgs, flake-utils, solc, lido-contracts, foundry }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
             solc.overlay
+            foundry.overlay
           ];
         };
         hPkgs = pkgs.haskell.packages."ghc963";
@@ -42,6 +44,7 @@
           pkgs.secp256k1
           stack-wrapped
           (solc.mkDefault pkgs pkgs.solc_0_8_26)
+          foundry.defaultPackage.${system}
           nodeEnv
         ];
         stack-wrapped = pkgs.symlinkJoin {
@@ -68,16 +71,8 @@
             export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
             mkdir -p $NPM_CONFIG_PREFIX
             npm install
-
-            # Create contracts directory and symlink the Lido contracts
-            ln -sfn ${lido-contracts} lido
-            cp -r $PWD/lido/contracts/* $PWD
-
-            mkdir -p @openzeppelin
-            # Create symlink for OpenZeppelin at root if node_modules exists
-            if [ -d "node_modules/@openzeppelin" ]; then
-              cp -r $PWD/node_modules/@openzeppelin/* $PWD/@openzeppelin/
-            fi
+            forge install --no-git OpenZeppelin/openzeppelin-contracts@v4.8.0
+            forge install --no-git https://github.com/lidofinance/dual-governance.git 
           '';
         };
       });
