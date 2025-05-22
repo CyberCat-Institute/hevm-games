@@ -39,7 +39,8 @@ import EVM.Types (VM, W256, VMType(..))
 import Debug.Trace
 
 -- maybe we need one more for extracting the state?
-$(loadAll [mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
+-- $(loadAll [mkContractFileInfo "Escrow.sol" [mkContractInfo "Escrow" "escrow"]])
+$(loadLocal "EscrowWrapper")
 
 lots :: Word64
 lots = 1_000_000
@@ -47,7 +48,7 @@ lots = 1_000_000
 stakeOrUnstakeReal :: EthAgent -> W256 -> AccountState -- GlobalLidoState -> SignallingEscrowState
                -> EVM Concrete RealWorld (AccountState, SignallingEscrowState)
 stakeOrUnstakeReal agent amount accounts
-  = do let lockTransaction = escrow_lockStETH (addr agent) 0 lots (fromIntegral amount)
+  = do let lockTransaction = escrowWrapper_lockStETHAndReport (addr agent) 0 lots (fromIntegral amount)
        -- let stateTransaction = dualgov_getEffectiveState (addr agent) 0 lots -- do we even need this?
        (result, newState) <- sendAndRunAll [lockTransaction]
        let Just environment = Op.preview #env newState
@@ -143,7 +144,7 @@ lidoOutcome GameParameters{..} = do
   let addresses =
         [ (player1, Lit 1_000_000_000),
           -- (dualgov_contract, Lit 10_000),
-          (escrow_contract, Lit 10_000)
+          (escrowWrapper_contract, Lit 10_000)
         ]
   i <- setupAddresses addresses <$> stToIO initial
   let game = stakingGame defaultGovernanceParams playerAgent transactions

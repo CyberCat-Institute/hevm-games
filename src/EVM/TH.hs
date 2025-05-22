@@ -13,16 +13,19 @@
 {-# LANGUAGE DeriveLift #-}
 
 module EVM.TH (sendAndRun, sendAndRunAll, sendAndRun', sendAndRunDiscard, makeTxCall, balance, loadAll
-              , ContractFileInfo, mkContractFileInfo, ContractInfo, mkContractInfo, AbiValue (..), Expr (..), stToIO, setupAddresses, getAllContracts) where
+              , loadLocal
+              , ContractFileInfo, mkContractFileInfo, ContractInfo, mkContractInfo, AbiValue (..), Expr (..)
+              , stToIO, setupAddresses, getAllContracts) where
 
 import Control.Monad.ST
 import Control.Monad.Trans.State.Strict
 import Control.Monad.Trans.State.Strict (State, put)
 import Data.ByteString (ByteString)
 import Data.Map as Map
-import Data.Text as T (Text, breakOn, drop, intercalate, pack, toLower, unpack, isPrefixOf)
+import Data.Text as T (Text, breakOn, drop, dropWhile, intercalate, pack, unpack, isPrefixOf)
 import Data.Text.IO (readFile)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
+import qualified Data.Char as C (toLower)
 import qualified Data.Tree.Zipper as Zipper
 import Data.Vector as Vector (Vector, fromList, toList)
 
@@ -30,6 +33,7 @@ import Control.Monad
 import EVM (blankState, emptyContract, exec1, initialContract, loadContract, resetState)
 import EVM.Exec (exec, run)
 import EVM.Expr
+import EVM.Effects (runApp)
 import EVM.FeeSchedule
 import EVM.Fetch
 import EVM.Prelude
@@ -48,6 +52,12 @@ import Prelude hiding (FilePath, readFile)
 import Data.List (nub)
 
 import Debug.Trace
+
+lowerFirst :: String -> String
+lowerFirst (x : xs) = C.toLower x : xs
+
+lowerFirst' :: Text -> Text
+lowerFirst' = pack . lowerFirst . unpack
 
 -- put this in sttate.callData
 -- run it to execute the transaction
@@ -85,12 +95,7 @@ loadIntoVM contracts = do
         burned = 0,
         iterations = mempty,
         constraints = [],
-        config =
-          RuntimeConfig
-            True
-            Nothing
-            False
-            EmptyBase
+        config = undefined
       }
   where
     -- question: Is that a reasonable empty first block?
@@ -177,13 +182,16 @@ constructorExprForType (AbiArrayType size ty) = error "arrays unsuppported"
 constructorExprForType (AbiTupleType types) = error "tuples unsupported" -- ConE (mkName "AbiTuple") [] [VarP (mkName name)]
 constructorExprForType (AbiFunctionType) = error "functions unsupported"
 
-data ContractInfo' a = ContractInfo' { name :: Text, boundName :: Text, payload :: a}
+data ContractInfo' a = ContractInfo' {
+  name :: Text,
+  boundName :: Maybe Text, -- there is only a bound name if we generate signatures for its API
+  payload :: a} -- the contract type, usually it's a SolcContract but it could also be bytes
   deriving Functor
 
 type ContractInfo = ContractInfo' ()
 
 mkContractInfo :: Text -> Text -> ContractInfo
-mkContractInfo name boundName = ContractInfo' name boundName ()
+mkContractInfo name boundName = ContractInfo' name (Just boundName) ()
 
 data ContractFileInfo' a = ContractFileInfo'
   { file :: Text,
@@ -199,7 +207,6 @@ pat = VarP . mkName
 
 generateTxFactory :: Text -> Method -> Integer -> Text -> Q Dec
 generateTxFactory moduleName (Method _ args name sig _) addr contractName = do
-  runIO $ print ("module " <> moduleName <> ", arguments for method " <> name <> ":" <> pack (show args))
   let signatureString :: Q Exp = pure $ LitE $ StringL $ unpack sig
   let argExp :: Q Exp = ListE <$> traverse (\(nm, ty) -> constructorExprForType ty (mkName $ unpack nm)) args
   let patterns :: [Pat] = fmap (VarP . mkName . unpack . fst) args
@@ -214,9 +221,11 @@ generateTxFactory moduleName (Method _ args name sig _) addr contractName = do
         amt
         gas
       |]
+  let methodName = unpack (lowerFirst' contractName <> "_" <> name)
+  runIO $ putStrLn $ "generating method " ++ methodName
   pure $
     FunD
-      (mkName (unpack (toLower contractName <> "_" <> name)))
+      (mkName methodName)
       [ Clause
           ( [pat "src", pat "amt", pat "gas"]
               ++ patterns
@@ -234,14 +243,31 @@ instance Lift (Expr 'EAddr) where
 instance Num (Expr 'EAddr) where
   fromInteger i = LitAddr (fromInteger i)
 
-loadFoundry :: Text -> Text -> Q [Dec]
-loadFoundry contractName jsonFile =
-  case fmap (\(a, _, _) -> fromContracts a) (readJSON Foundry contractName jsonFile) of
-       Nothing -> runIO (error "could not read json from foundry")
-       Just c -> loadAllContracts c
+dropUntilColon :: Text -> Text
+dropUntilColon s = T.drop 1 (T.dropWhile (/= ':') s)
 
-fromContracts :: Contracts -> [ContractInfo' SolcContract]
-fromContracts (Contracts cts) = Prelude.map (\(n, c) -> ContractInfo' n n c) (Map.toList cts)
+loadLocal :: Text -> Q [Dec]
+loadLocal contractName = do
+  contracts <- runIO (runApp (readBuildOutput "." Foundry))
+  case contracts of
+    Left err -> runIO (error $ "could not read build ouput, error: " ++ err)
+    Right (BuildOutput cts _) ->
+      let contractInfo = fromContracts [contractName] cts
+      in loadAllContracts contractInfo
+
+fromContracts :: [Text] -> Contracts -> [ContractInfo' SolcContract]
+-- fromContracts (Contracts cts) = Prelude.map (\(n, c) -> ContractInfo' n (toLower $ dropUntilColon n) c) (Map.toList cts)
+fromContracts names (Contracts cts) = Prelude.map genContract (Map.toList cts)
+  where
+    genContract :: (Text, SolcContract) -> ContractInfo' SolcContract
+    genContract (filename, contract) = let
+        boundName = dropUntilColon filename
+        usingName = if boundName `elem` names
+                       then -- trace (unpack boundName ++ " found in " ++ show names)
+                            (Just (lowerFirst' boundName))
+                       else -- trace (unpack boundName ++ " not found in " ++ show names)
+                            Nothing
+      in ContractInfo' filename usingName contract
 
 readContracts :: [ContractFileInfo] -> IO [ContractInfo' SolcContract]
 readContracts = fmap concat . traverse loadSolcInfo
@@ -252,31 +278,49 @@ loadAll = runIO . readContracts >=> loadAllContracts
 loadAllContracts :: [ContractInfo' SolcContract] -> Q [Dec]
 loadAllContracts allContracts = do
   let allContractsHash = zip [ 0x1000.. ] allContracts
-  runIO $ putStrLn ("contracts: " <> unwords (fmap (unpack . name) allContracts))
+  -- runIO $ putStrLn ("contracts: " <> unlines (fmap (unpack . name) allContracts))
   methods <- concat <$> traverse generateDefsForMethods allContractsHash
   let contractMap = generateContractMap allContractsHash
-  contractNames <- traverse (\(addr, ContractInfo' nm bn con) -> contractName bn addr) allContractsHash
-  -- traverse (\(ix, ContractFileInfo _ nm) -> contractName nm ix) (zip [0x1000 ..] contracts)
+  -- we remove the contracts that don't have a bound name
+  let addedContracts = catMaybes (fmap (\(addr, ContractInfo' nm bn con) -> fmap (\n -> contractName n addr) bn) allContractsHash)
+  contractNames <- sequence addedContracts
   init <-
     [d|
       initial = loadIntoVM contractMap
       |]
   pure (init ++ methods ++ contractNames)
   where
-    takeAfterColon :: Text -> Text
-    takeAfterColon txt =
-      case breakOn ":" txt of
-        (_, rest) -> T.drop 1 rest
-                        -- Address, Contract name, Bound name
     generateContractMap :: [(Integer, ContractInfo' SolcContract)] -> [(Integer, ByteString)]
     generateContractMap = fmap (\(i, contract) -> (i, contract.payload.runtimeCode))
-                        -- Address, Contract name, Bound name
     generateDefsForMethods :: (Integer, ContractInfo' SolcContract) -> Q [Dec]
-    generateDefsForMethods (hash, ContractInfo' name boundName contract) = do
+    generateDefsForMethods (hash, ContractInfo' name (Just boundName) contract) = do
       let methods = Map.elems contract.abiMap
-      let noDups = handleDuplicates methods Map.empty
-      traverse (\x -> generateTxFactory (takeAfterColon contract.contractName) x hash boundName)
+      let noDups = handleDuplicates (fmap handleReservedArgs methods) Map.empty
+      -- runIO $ putStrLn ("generating methods for contract" ++ unpack name)
+      traverse (\x -> generateTxFactory (dropUntilColon contract.contractName) x hash boundName)
           noDups
+    -- if there is no bound name, no need to generate any definition
+    generateDefsForMethods (hash, ContractInfo' name Nothing contract)
+      = -- runIO (putStrLn ("dropping contract " ++ unpack name)) >>
+        pure []
+
+    isReserved :: Text -> Bool
+    isReserved "data" = True
+    isReserved "import" = True
+    isReserved "module" = True
+    isReserved "qualified" = True
+    isReserved "do" = True
+    isReserved _ = False
+
+    reserved' :: (Text, a) -> (Text, a)
+    reserved' (arg, a) =
+        if isReserved arg
+            then (arg <> "'", a)
+            else (arg, a)
+
+    handleReservedArgs :: Method -> Method
+    handleReservedArgs m =
+        over #inputs (fmap reserved') m
 
     handleDuplicates :: [Method] -> Map Text Int -> [Method]
     handleDuplicates [] _ = []
@@ -381,9 +425,8 @@ getAllContracts vm =
 balance :: VM Concrete s -> Expr EAddr -> W256
 balance st addr =
   let contract = Map.lookup addr st.env.contracts
-      Just balance = fmap (view #balance) contract
-      Just int = maybeLitWord balance
-   in int
+      Just (Lit balance) = fmap (view #balance) contract
+   in balance
 
 -- TODO: use foundry
 -- thatOneMethod =

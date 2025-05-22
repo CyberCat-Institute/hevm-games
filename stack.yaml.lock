@@ -68,15 +68,15 @@ packages:
   original:
     hackage: monad-bayes-1.3.0.3@sha256:c99b035f2c76ef56cb7471126d7e6ef70bd06135ad6882def759289942130850,6635
 - completed:
-    commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
+    commit: 2bc39562d05bfab2c0aa272da3141d6a146fd6cd
     git: https://github.com/ethereum/hevm
     name: hevm
     pantry-tree:
-      sha256: c855c40c933fec1b2f9f1eac366a658be3ad0afda03e930dfdc2d6cb4e1d3788
-      size: 7720
-    version: 0.53.0
+      sha256: 1a5ec5251bfa61c354d32c099b64370136ebc826d68a803625e1e0e425aa68f7
+      size: 7570
+    version: 0.54.2
   original:
-    commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
+    commit: 2bc39562d05bfab2c0aa272da3141d6a146fd6cd
     git: https://github.com/ethereum/hevm
 - completed:
     commit: 79b8ebf93421c32c5e72b35ed78ce64e8d743b0c
