@@ -95,7 +95,7 @@ loadIntoVM contracts = do
         burned = 0,
         iterations = mempty,
         constraints = [],
-        config = undefined
+        config = RuntimeConfig False EmptyBase
       }
   where
     -- question: Is that a reasonable empty first block?
@@ -357,7 +357,7 @@ loadSolcInfo (ContractFileInfo' contractFilename modules) = do
 run' :: EVM Concrete s (Maybe (Expr Buf), VM Concrete s)
 run' = do
   vm <- get
-  trace (unpack $ showTraceTree undefined vm) $ case vm.result of
+  case vm.result of
     Nothing -> exec1 >> run'
     Just (HandleEffect (Query (PleaseAskSMT (Lit c) _ cont))) ->
       error "SMT effects not handled"
