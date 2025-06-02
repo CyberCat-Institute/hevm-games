@@ -38,6 +38,7 @@ dependencies:
     - hashmap
     - tasty
     - tasty-golden
+    - time
 
 tests:
   hevm-tests:

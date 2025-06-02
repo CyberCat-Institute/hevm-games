@@ -49,8 +49,17 @@ optionsPlayer2 =
     prison_cooperate player2 0 10_000_000
   ]
 
-sendAndRunBoth (a, b) = sendAndRunAll [a, b]
+sendAndRunBoth (a, b) = snd <$> sendAndRunAll [a, b]
 
+hevmDilemma
+  :: HEVMGame
+       [() -> EthTransaction, () -> EthTransaction]
+       [HEVMState (DiagnosticInfoBayesian () EthTransaction)
+       ,HEVMState (DiagnosticInfoBayesian () EthTransaction)]
+       ()
+       ()
+       ()
+       ()
 hevmDilemma =
   [opengame|
   inputs : ;

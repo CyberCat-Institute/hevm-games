@@ -86,7 +86,7 @@ playerAutomatic =
 
   inputs    : transactions;
   feedback  : ;
-  operation : fromLensM sendAndRun' (const pure) ;
+  operation : fromLensM sendAndRunDiscard (const pure) ;
   outputs   : finalState ;
   returns   : ;
 

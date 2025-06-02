@@ -44,9 +44,9 @@ extra-deps:
   - vector-sized-1.5.0@sha256:1c85b70dbfe6fbdcc58d2706c626e6e38d1900276bbb6f1ba6cfee83941f45e6,1836
   - monad-bayes-1.3.0.3@sha256:c99b035f2c76ef56cb7471126d7e6ef70bd06135ad6882def759289942130850,6635
   - git: https://github.com/ethereum/hevm
-    commit: 46ca5e37fae75bc9d5f10d7a9242684f8eae2590
+    commit: 2bc39562d05bfab2c0aa272da3141d6a146fd6cd
   - git: https://github.com/CyberCat-Institute/open-game-engine/
-    commit: c9607b998d68fd5ece97f65a177c28baa2b5d04a
+    commit: 79b8ebf93421c32c5e72b35ed78ce64e8d743b0c
 
 
   # - HSH-2.1.3@sha256:71ded11b224f5066373ce985ec63b10c87129850b33916736dd64fa2bea9ea0a,1705
